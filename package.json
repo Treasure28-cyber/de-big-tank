@@ -1,0 +1,17 @@
+{
+  "name": "de-big-tank",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev --workspace=@de-big-tank/web",
+    "dev:api": "npm run start:dev --workspace=@de-big-tank/api",
+    "build": "npm run build --workspaces",
+    "lint": "npm run lint --workspaces"
+  },
+  "engines": {
+    "node": ">=20.9.0"
+  }
+}

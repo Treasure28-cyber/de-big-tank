@@ -1,0 +1,135 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Pending SDD sign-off: a provisional content-only model derived from Docs 1-3.
+// Customer orders and reservations must never be persisted in this schema.
+
+enum ServiceLine {
+  RESTAURANT
+  BAKERY
+  LOUNGE
+}
+
+enum AdminRole {
+  ADMIN
+}
+
+model Admin {
+  id           String     @id @default(cuid())
+  name         String
+  email        String     @unique
+  passwordHash String
+  role         AdminRole  @default(ADMIN)
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  auditEvents  AuditEvent[]
+}
+
+model Category {
+  id          String      @id @default(cuid())
+  name        String
+  slug        String      @unique
+  serviceLine ServiceLine
+  description String?
+  sortOrder   Int         @default(0)
+  isActive    Boolean     @default(true)
+  products    Product[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([serviceLine, sortOrder])
+}
+
+model Product {
+  id                 String           @id @default(cuid())
+  name               String
+  slug               String           @unique
+  description        String
+  price              Decimal          @db.Decimal(12, 2)
+  imageUrl           String?
+  altText            String?
+  isAvailable        Boolean          @default(true)
+  allowsSpecialNotes Boolean          @default(false)
+  categoryId         String
+  category           Category         @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  variants           ProductVariant[]
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@index([categoryId, isAvailable])
+}
+
+model ProductVariant {
+  id          String   @id @default(cuid())
+  name        String
+  priceDelta  Decimal  @default(0) @db.Decimal(12, 2)
+  isAvailable Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model GalleryImage {
+  id        String   @id @default(cuid())
+  imageUrl  String
+  altText   String
+  caption   String?
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Promotion {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  description String
+  imageUrl    String?
+  startsAt    DateTime?
+  endsAt      DateTime?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SiteSettings {
+  id                   String   @id @default("default")
+  businessName         String   @default("De Big Tank")
+  tagline              String   @default("Restaurant, Bakery & Lounge")
+  whatsappNumber       String
+  phone                String?
+  email                String?
+  address              String?
+  mapEmbedUrl          String?
+  businessHours        Json     @default("[]")
+  socialLinks          Json     @default("{}")
+  heroTitle            String?
+  heroSubtitle         String?
+  heroImageUrl         String?
+  heroImageAlt         String?
+  updatedAt            DateTime @updatedAt
+}
+
+model AuditEvent {
+  id          String   @id @default(cuid())
+  actorId     String
+  actor       Admin    @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  action      String
+  entityType  String
+  entityId    String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([actorId, createdAt])
+}
