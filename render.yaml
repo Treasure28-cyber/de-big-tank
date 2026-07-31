@@ -1,0 +1,25 @@
+databases:
+  - name: de-big-tank-db
+    databaseName: de_big_tank
+    user: de_big_tank
+    plan: starter
+
+services:
+  - type: web
+    name: de-big-tank-api
+    runtime: node
+    plan: starter
+    buildCommand: npm ci && npm run prisma:generate --workspace=@de-big-tank/api && npm run build --workspace=@de-big-tank/api
+    startCommand: npx prisma migrate deploy --schema apps/api/prisma/schema.prisma && npm run start --workspace=@de-big-tank/api
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: de-big-tank-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: WEB_ORIGIN
+        sync: false

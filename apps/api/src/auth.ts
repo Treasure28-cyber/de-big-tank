@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
+import { CanActivate, ExecutionContext, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from './prisma.service';
@@ -21,17 +21,30 @@ export class AuthService {
 
 @Injectable()
 export class AdminGuard implements CanActivate {
-  constructor(private readonly jwt: JwtService) {}
+  constructor(
+    private readonly jwt: JwtService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   async canActivate(context: ExecutionContext) {
-    const request = context.switchToHttp().getRequest<{ headers: { authorization?: string }; admin?: { id: string } }>();
+    const request = context.switchToHttp().getRequest<{
+      headers: { authorization?: string };
+      admin?: { id: string; email: string; role: string };
+    }>();
     const token = request.headers.authorization?.replace(/^Bearer\s+/i, '');
     if (!token) throw new UnauthorizedException('Missing bearer token');
     try {
-      const payload = await this.jwt.verifyAsync<{ sub: string }>(token);
-      request.admin = { id: payload.sub };
+      const payload = await this.jwt.verifyAsync<{ sub: string; email: string; role: string }>(token);
+      const admin = await this.prisma.admin.findUnique({
+        where: { id: payload.sub },
+        select: { id: true, email: true, role: true, isActive: true },
+      });
+      if (!admin?.isActive) throw new UnauthorizedException('Invalid or expired token');
+      if (admin.role !== 'ADMIN') throw new ForbiddenException('Insufficient permissions');
+      request.admin = { id: admin.id, email: admin.email, role: admin.role };
       return true;
-    } catch {
+    } catch (error) {
+      if (error instanceof ForbiddenException) throw error;
       throw new UnauthorizedException('Invalid or expired token');
     }
   }

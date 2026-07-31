@@ -1,49 +1,591 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
+import {
+  Category,
+  fallbackCategories,
+  fallbackGallery,
+  fallbackProducts,
+  fallbackPromotions,
+  fallbackSettings,
+  GalleryImage,
+  Line,
+  Product,
+  Promotion,
+  SiteSettings,
+  Variant,
+} from '../lib/content';
 
-type Line = 'restaurant' | 'bakery' | 'lounge';
-type Product = { id: string; line: Line; name: string; description: string; price: number; image: string; category: string };
-type CartItem = Product & { quantity: number; note: string };
+export type PublicSlug = 'restaurant' | 'bakery' | 'lounge' | 'gallery' | 'about' | 'promotions' | 'contact' | 'reserve';
+type CartItem = {
+  key: string;
+  productId: string;
+  name: string;
+  imageUrl?: string | null;
+  variant?: { id: string; name: string; priceDelta: number };
+  unitPrice: number;
+  quantity: number;
+  note: string;
+};
+type Content = {
+  products: Product[];
+  categories: Category[];
+  gallery: GalleryImage[];
+  promotions: Promotion[];
+  settings: SiteSettings;
+};
 
-const products: Product[] = [
-  { id: 'jollof', line: 'restaurant', name: 'Smoky Jollof Rice', description: 'Slow-cooked party jollof with grilled chicken.', price: 6500, category: 'Mains', image: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=900&q=80' },
-  { id: 'suya', line: 'restaurant', name: 'Beef Suya Platter', description: 'Spiced beef, onions, tomatoes and house pepper sauce.', price: 7200, category: 'Grills', image: 'https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?auto=format&fit=crop&w=900&q=80' },
-  { id: 'cake', line: 'bakery', name: 'Red Velvet Celebration Cake', description: 'Four layers with cream cheese frosting.', price: 18500, category: 'Cakes', image: 'https://images.unsplash.com/photo-1586788680434-30d324a6cda3?auto=format&fit=crop&w=900&q=80' },
-  { id: 'croissant', line: 'bakery', name: 'Butter Croissant', description: 'Freshly baked, crisp and deeply buttery.', price: 2200, category: 'Pastries', image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=900&q=80' },
-  { id: 'mojito', line: 'lounge', name: 'Passionfruit Mojito', description: 'Fresh mint, citrus and passionfruit over ice.', price: 5500, category: 'Cocktails', image: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=900&q=80' },
-  { id: 'platter', line: 'lounge', name: 'After Hours Platter', description: 'Wings, fries, sliders and signature dips.', price: 14500, category: 'Shared Plates', image: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=900&q=80' },
-];
-const nav = [['Home', '/'], ['Restaurant', '/restaurant'], ['Bakery', '/bakery'], ['Lounge', '/lounge'], ['Gallery', '/gallery'], ['About', '/about'], ['Promotions', '/promotions'], ['Contact', '/contact']];
-const whatsapp = '2348000000000';
-const naira = (value: number) => new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', maximumFractionDigits: 0 }).format(value);
+const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
+const nav = [
+  ['Home', '/'],
+  ['Restaurant', '/restaurant'],
+  ['Bakery', '/bakery'],
+  ['Lounge', '/lounge'],
+  ['Gallery', '/gallery'],
+  ['Promotions', '/promotions'],
+  ['About', '/about'],
+  ['Contact', '/contact'],
+] as const;
+const defaultContent: Content = {
+  products: fallbackProducts,
+  categories: fallbackCategories,
+  gallery: fallbackGallery,
+  promotions: fallbackPromotions,
+  settings: fallbackSettings,
+};
+const naira = (value: number) => new Intl.NumberFormat('en-NG', {
+  style: 'currency',
+  currency: 'NGN',
+  maximumFractionDigits: 0,
+}).format(value);
+const lineFromSlug = (slug?: string): Line | undefined => {
+  if (slug === 'restaurant') return 'RESTAURANT';
+  if (slug === 'bakery') return 'BAKERY';
+  if (slug === 'lounge') return 'LOUNGE';
+  return undefined;
+};
 
-export default function Site({ slug }: { slug?: string }) {
+export default function Site({ slug }: { slug?: PublicSlug }) {
+  const [content, setContent] = useState<Content>(defaultContent);
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [cartReady, setCartReady] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
-  const [checkout, setCheckout] = useState(false);
-  const [query, setQuery] = useState('');
-  const activeLine = ['restaurant', 'bakery', 'lounge'].includes(slug ?? '') ? slug as Line : undefined;
-  const add = (product: Product) => { setCart((items) => { const existing = items.find((item) => item.id === product.id); return existing ? items.map((item) => item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item) : [...items, { ...product, quantity: 1, note: '' }]; }); setCartOpen(true); };
-  const shown = useMemo(() => products.filter((product) => (!activeLine || product.line === activeLine) && product.name.toLowerCase().includes(query.toLowerCase())), [activeLine, query]);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem('dbt-cart-v1');
+      if (stored) setCart(JSON.parse(stored) as CartItem[]);
+    } catch {
+      window.localStorage.removeItem('dbt-cart-v1');
+    } finally {
+      setCartReady(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (cartReady) window.localStorage.setItem('dbt-cart-v1', JSON.stringify(cart));
+  }, [cart, cartReady]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    Promise.all([
+      fetch(`${apiUrl}/products`, { signal: controller.signal }).then((response) => response.ok ? response.json() as Promise<Product[]> : Promise.reject()),
+      fetch(`${apiUrl}/categories`, { signal: controller.signal }).then((response) => response.ok ? response.json() as Promise<Category[]> : Promise.reject()),
+      fetch(`${apiUrl}/gallery`, { signal: controller.signal }).then((response) => response.ok ? response.json() as Promise<GalleryImage[]> : Promise.reject()),
+      fetch(`${apiUrl}/promotions`, { signal: controller.signal }).then((response) => response.ok ? response.json() as Promise<Promotion[]> : Promise.reject()),
+      fetch(`${apiUrl}/settings`, { signal: controller.signal }).then((response) => response.ok ? response.json() as Promise<SiteSettings | null> : Promise.reject()),
+    ]).then(([products, categories, gallery, promotions, settings]) => {
+      setContent({
+        products: products.length ? products : fallbackProducts,
+        categories: categories.length ? categories : fallbackCategories,
+        gallery: gallery.length ? gallery : fallbackGallery,
+        promotions: promotions.length ? promotions : fallbackPromotions,
+        settings: settings ?? fallbackSettings,
+      });
+    }).catch(() => {
+      // The polished demo content remains visible when the content API is not configured.
+    });
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [slug]);
+
+  const addToCart = (product: Product, variant?: Variant) => {
+    const selectedVariant = variant ? {
+      id: variant.id,
+      name: variant.name,
+      priceDelta: Number(variant.priceDelta),
+    } : undefined;
+    const key = `${product.id}:${selectedVariant?.id ?? 'base'}`;
+    setCart((items) => {
+      const existing = items.find((item) => item.key === key);
+      if (existing) {
+        return items.map((item) => item.key === key ? { ...item, quantity: item.quantity + 1 } : item);
+      }
+      return [...items, {
+        key,
+        productId: product.id,
+        name: product.name,
+        imageUrl: product.imageUrl,
+        variant: selectedVariant,
+        unitPrice: Number(product.price) + (selectedVariant?.priceDelta ?? 0),
+        quantity: 1,
+        note: '',
+      }];
+    });
+    setCartOpen(true);
+  };
+
   const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
-  return <div>
-    <header className="sticky top-0 z-30 border-b border-white/15 bg-[#7A0D0D] text-white"><div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3"><Link href="/" className="shrink-0 font-serif text-2xl font-bold">De Big Tank<span className="block font-sans text-[10px] font-normal uppercase tracking-[0.18em]">Restaurant, Bakery & Lounge</span></Link><nav className="hidden gap-4 text-sm lg:flex">{nav.slice(1).map(([label, href]) => <Link key={href} href={href} className="hover:text-[#f0d58a]">{label}</Link>)}</nav><button onClick={() => setCartOpen(true)} className="border border-[#C9A227] px-3 py-2 text-sm font-bold">Cart ({cartCount})</button></div></header>
-    {slug === 'gallery' ? <Gallery /> : slug === 'about' ? <About /> : slug === 'promotions' ? <Promotions add={add} /> : slug === 'contact' ? <Contact /> : slug === 'reserve' ? <Reservation /> : activeLine ? <Catalog line={activeLine} products={shown} query={query} setQuery={setQuery} add={add} /> : <Home add={add} />}
-    <footer className="bg-[#201919] px-4 py-10 text-center text-sm text-white/75">De Big Tank · Restaurant, Bakery & Lounge · <Link href="/contact" className="text-[#f0d58a]">Contact us</Link></footer>
-    {cartOpen && <Cart items={cart} close={() => setCartOpen(false)} checkout={() => { setCartOpen(false); setCheckout(true); }} change={setCart} />}
-    {checkout && <Checkout items={cart} close={() => setCheckout(false)} />}
-  </div>;
+  const activeLine = lineFromSlug(slug);
+
+  return (
+    <div className="site-shell">
+      <a href="#main-content" className="skip-link">Skip to content</a>
+      <header className="site-header">
+        <div className="header-inner">
+          <Link href="/" className="brand" aria-label="De Big Tank home">
+            <span className="brand-mark">BT</span>
+            <span>
+              <strong>De Big Tank</strong>
+              <small>Restaurant · Bakery · Lounge</small>
+            </span>
+          </Link>
+          <nav className="desktop-nav" aria-label="Main navigation">
+            {nav.slice(1).map(([label, href]) => <Link key={href} href={href}>{label}</Link>)}
+          </nav>
+          <div className="header-actions">
+            <Link href="/reserve" className="header-reserve">Reserve</Link>
+            <button type="button" onClick={() => setCartOpen(true)} className="cart-button" aria-label={`Open cart with ${cartCount} items`}>
+              Bag <span>{cartCount}</span>
+            </button>
+            <button type="button" className="menu-button" aria-label="Toggle menu" aria-expanded={mobileOpen} onClick={() => setMobileOpen((open) => !open)}>
+              <span /><span /><span />
+            </button>
+          </div>
+        </div>
+        {mobileOpen && (
+          <nav className="mobile-nav" aria-label="Mobile navigation">
+            {nav.map(([label, href]) => <Link key={href} href={href}>{label}</Link>)}
+            <Link href="/reserve" className="mobile-reserve">Reserve a table</Link>
+          </nav>
+        )}
+      </header>
+
+      <main id="main-content">
+        {slug === 'gallery' ? <Gallery images={content.gallery} /> :
+          slug === 'about' ? <About /> :
+          slug === 'promotions' ? <Promotions promotions={content.promotions} /> :
+          slug === 'contact' ? <Contact settings={content.settings} /> :
+          slug === 'reserve' ? <Reservation settings={content.settings} /> :
+          activeLine ? <Catalog line={activeLine} products={content.products} categories={content.categories} add={addToCart} /> :
+          <Home content={content} add={addToCart} />}
+      </main>
+
+      <Footer settings={content.settings} />
+      {cartOpen && (
+        <Cart
+          items={cart}
+          close={() => setCartOpen(false)}
+          proceed={() => { setCartOpen(false); setCheckoutOpen(true); }}
+          change={setCart}
+        />
+      )}
+      {checkoutOpen && <Checkout items={cart} settings={content.settings} close={() => setCheckoutOpen(false)} />}
+    </div>
+  );
 }
 
-function Home({ add }: { add: (product: Product) => void }) { return <><section className="relative min-h-[580px] bg-cover bg-center" style={{ backgroundImage: "linear-gradient(90deg, rgba(35,5,5,.84), rgba(35,5,5,.25)), url('https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?auto=format&fit=crop&w=1800&q=85')" }}><div className="mx-auto flex min-h-[580px] max-w-7xl flex-col justify-end px-6 pb-16 text-white"><p className="mb-3 text-sm font-bold uppercase tracking-[0.18em] text-[#f0d58a]">Lagos hospitality, done properly</p><h1 className="max-w-2xl text-5xl leading-tight font-bold md:text-7xl">De Big Tank</h1><p className="mt-4 max-w-xl text-lg leading-8">A table for every appetite: spirited dining, fresh baking, and late lounge evenings.</p><div className="mt-8 flex flex-wrap gap-3"><Link href="/restaurant" className="bg-[#B31217] px-6 py-3 font-bold">Order a meal</Link><Link href="/reserve" className="border border-white px-6 py-3 font-bold">Reserve a table</Link></div></div></section><section className="mx-auto max-w-7xl px-6 py-16"><div className="mb-8 flex items-end justify-between gap-6"><div><p className="text-sm font-bold uppercase tracking-[0.14em] text-[#B31217]">Popular right now</p><h2 className="mt-2 text-4xl">Made for the whole table</h2></div><Link href="/restaurant" className="text-sm font-bold text-[#7A0D0D]">View all menus</Link></div><div className="grid gap-5 md:grid-cols-3">{products.slice(0, 3).map((product) => <ProductTile key={product.id} product={product} add={add} />)}</div></section></> }
-function Catalog({ line, products: items, query, setQuery, add }: { line: Line; products: Product[]; query: string; setQuery: (v: string) => void; add: (p: Product) => void }) { const title = line[0].toUpperCase() + line.slice(1); return <main className="mx-auto max-w-7xl px-6 py-14"><p className="text-sm font-bold uppercase tracking-[0.14em] text-[#B31217]">De Big Tank {title}</p><h1 className="mt-2 text-5xl">{line === 'lounge' ? 'Good drinks. Better evenings.' : `The ${title} menu`}</h1><div className="my-9 border-y border-black/10 py-4"><input aria-label="Search menu" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search the menu" className="w-full max-w-md border border-black/20 px-4 py-3" /></div><div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{items.map((product) => <ProductTile key={product.id} product={product} add={add} />)}</div></main> }
-function ProductTile({ product, add }: { product: Product; add: (p: Product) => void }) { return <article className="overflow-hidden border border-black/10 bg-white"><img src={product.image} alt={product.name} className="h-52 w-full object-cover" /><div className="p-5"><p className="text-xs font-bold uppercase tracking-[.12em] text-[#B31217]">{product.category}</p><h3 className="mt-2 text-2xl">{product.name}</h3><p className="mt-2 min-h-12 text-sm leading-6 text-black/65">{product.description}</p><div className="mt-5 flex items-center justify-between gap-3"><strong>{naira(product.price)}</strong><button onClick={() => add(product)} className="bg-[#7A0D0D] px-3 py-2 text-sm font-bold text-white">Add to cart</button></div></div></article> }
-function Gallery() { return <main className="mx-auto max-w-7xl px-6 py-14"><p className="text-sm font-bold uppercase tracking-[.14em] text-[#B31217]">Gallery</p><h1 className="mt-2 text-5xl">The room, the table, the moment.</h1><div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{products.map((p) => <img key={p.id} src={p.image} alt={p.name} className="aspect-[4/3] w-full object-cover" />)}</div></main> }
-function About() { return <main className="mx-auto max-w-3xl px-6 py-20"><p className="text-sm font-bold uppercase tracking-[.14em] text-[#B31217]">Our story</p><h1 className="mt-2 text-5xl">One house. Three reasons to stay.</h1><p className="mt-8 text-lg leading-8 text-black/75">De Big Tank brings restaurant plates, bakery counters and lounge nights together under one roof. We make room for quick lunches, celebrations and unhurried evenings.</p><p className="mt-6 text-lg leading-8 text-black/75">Our menus are designed to be shared, our hospitality is direct, and our WhatsApp team is ready to make the details work.</p></main> }
-function Promotions({ add }: { add: (p: Product) => void }) { return <main className="mx-auto max-w-7xl px-6 py-14"><p className="text-sm font-bold uppercase tracking-[.14em] text-[#B31217]">Specials</p><h1 className="mt-2 text-5xl">Reasons to gather.</h1><div className="mt-10 grid gap-6 md:grid-cols-2"><article className="border-l-4 border-[#C9A227] bg-[#F5F5F5] p-8"><p className="font-bold text-[#7A0D0D]">Friday lounge service</p><h2 className="mt-2 text-3xl">Shared plates after 6pm</h2><p className="mt-3 text-black/70">Build the evening around our signature platter and a table in the lounge.</p><button onClick={() => add(products[5])} className="mt-6 bg-[#7A0D0D] px-4 py-3 font-bold text-white">Add platter</button></article><article className="border-l-4 border-[#C9A227] bg-[#F5F5F5] p-8"><p className="font-bold text-[#7A0D0D]">Bakery pre-order</p><h2 className="mt-2 text-3xl">Celebrate with red velvet</h2><p className="mt-3 text-black/70">Order your cake early and add your special request when checking out.</p><Link href="/bakery" className="mt-6 inline-block bg-[#7A0D0D] px-4 py-3 font-bold text-white">Browse bakery</Link></article></div></main> }
-function Contact() { return <main className="mx-auto grid max-w-7xl gap-12 px-6 py-16 md:grid-cols-2"><div><p className="text-sm font-bold uppercase tracking-[.14em] text-[#B31217]">Contact</p><h1 className="mt-2 text-5xl">Come through.</h1><div className="mt-8 space-y-5 text-lg"><p><strong>Phone & WhatsApp</strong><br />+234 800 000 0000</p><p><strong>Address</strong><br />Address to be confirmed</p><p><strong>Hours</strong><br />Daily, 10:00am - late</p></div><Link href="/reserve" className="mt-8 inline-block bg-[#B31217] px-5 py-3 font-bold text-white">Make a reservation</Link></div><div className="min-h-80 bg-[#F5F5F5] p-8"><h2 className="text-3xl">Find us</h2><p className="mt-4 text-black/65">Map embed pending confirmed business address and map provider.</p></div></main> }
-function Cart({ items, close, checkout, change }: { items: CartItem[]; close: () => void; checkout: () => void; change: (items: CartItem[]) => void }) { const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0); return <aside className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col bg-white shadow-2xl"><div className="flex items-center justify-between border-b p-5"><h2 className="text-3xl">Your cart</h2><button aria-label="Close cart" onClick={close}>Close</button></div><div className="flex-1 overflow-y-auto p-5">{items.length === 0 ? <p className="text-black/60">Your cart is empty.</p> : items.map((item) => <div key={item.id} className="border-b py-4"><div className="flex justify-between gap-3"><div><strong>{item.name}</strong><p className="text-sm text-black/60">{naira(item.price)}</p></div><button onClick={() => change(items.filter((i) => i.id !== item.id))} className="text-sm text-[#B31217]">Remove</button></div><div className="mt-3 flex items-center gap-3"><button onClick={() => change(items.map((i) => i.id === item.id ? { ...i, quantity: Math.max(1, i.quantity - 1) } : i))}>-</button><span>{item.quantity}</span><button onClick={() => change(items.map((i) => i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i))}>+</button></div><input aria-label={`Note for ${item.name}`} value={item.note} onChange={(e) => change(items.map((i) => i.id === item.id ? { ...i, note: e.target.value } : i))} placeholder="Special request" className="mt-3 w-full border border-black/15 px-3 py-2 text-sm" /></div>)}</div><div className="border-t p-5"><div className="mb-4 flex justify-between font-bold"><span>Total</span><span>{naira(total)}</span></div><button disabled={!items.length} onClick={checkout} className="w-full bg-[#B31217] px-5 py-3 font-bold text-white disabled:bg-black/20">Continue to WhatsApp</button></div></aside> }
-function Checkout({ items, close }: { items: CartItem[]; close: () => void }) { const submit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const form = new FormData(event.currentTarget); const list = items.map((item) => `- ${item.quantity}x ${item.name}${item.note ? ` (${item.note})` : ''} - ${naira(item.price * item.quantity)}`).join('\n'); const message = `Hello De Big Tank, I would like to place an order.\n\nName: ${form.get('name')}\nPhone: ${form.get('phone')}\nOrder type: ${form.get('type')}\nPreferred time: ${form.get('time') || 'Not specified'}\nNotes: ${form.get('notes') || 'None'}\n\nItems:\n${list}`; window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer'); }; return <div className="fixed inset-0 z-50 overflow-y-auto bg-black/50 p-4"><form onSubmit={submit} className="mx-auto my-10 max-w-lg bg-white p-6"><div className="flex justify-between"><h2 className="text-3xl">Order details</h2><button type="button" onClick={close}>Close</button></div><div className="mt-5 grid gap-4"><input required name="name" placeholder="Your name" className="border p-3" /><input required name="phone" placeholder="Phone number" className="border p-3" /><select name="type" className="border p-3"><option>Pickup</option><option>Delivery</option></select><input name="time" placeholder="Preferred pickup time" className="border p-3" /><textarea name="notes" placeholder="Order notes" className="border p-3" rows={3} /><button className="bg-[#B31217] px-5 py-3 font-bold text-white">Open WhatsApp with order</button></div></form></div> }
-function Reservation() { const submit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); const f = new FormData(event.currentTarget); const message = `Hello De Big Tank, I would like to request a reservation.\n\nName: ${f.get('name')}\nPhone: ${f.get('phone')}\nEmail: ${f.get('email') || 'Not provided'}\nDate: ${f.get('date')}\nTime: ${f.get('time')}\nGuests: ${f.get('guests')}\nArea: ${f.get('area')}\nSpecial request: ${f.get('notes') || 'None'}`; window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer'); }; return <main className="mx-auto max-w-2xl px-6 py-16"><p className="text-sm font-bold uppercase tracking-[.14em] text-[#B31217]">Reservations</p><h1 className="mt-2 text-5xl">Save your seat.</h1><p className="mt-4 text-black/65">Your request opens in WhatsApp for our team to confirm directly.</p><form onSubmit={submit} className="mt-10 grid gap-4 sm:grid-cols-2"><input required name="name" placeholder="Your name" className="border p-3" /><input required name="phone" placeholder="Phone number" className="border p-3" /><input name="email" type="email" placeholder="Email (optional)" className="border p-3" /><select name="area" className="border p-3"><option>Restaurant</option><option>Lounge</option><option>VIP</option><option>Event</option></select><input required name="date" type="date" className="border p-3" /><input required name="time" type="time" className="border p-3" /><input required name="guests" type="number" min="1" placeholder="Number of guests" className="border p-3" /><textarea name="notes" placeholder="Special request" className="border p-3 sm:col-span-2" rows={4} /><button className="bg-[#B31217] px-5 py-3 font-bold text-white sm:col-span-2">Open WhatsApp with request</button></form></main> }
+function Home({ content, add }: { content: Content; add: (product: Product, variant?: Variant) => void }) {
+  const hero = content.settings.heroImageUrl ?? fallbackSettings.heroImageUrl!;
+  const services = [
+    { title: 'Restaurant', eyebrow: 'At the table', description: 'Generous Nigerian favourites, grills and plates built for sharing.', href: '/restaurant', image: fallbackProducts[0].imageUrl! },
+    { title: 'Bakery', eyebrow: 'From the oven', description: 'Fresh pastries and celebration cakes made with a personal touch.', href: '/bakery', image: fallbackProducts[2].imageUrl! },
+    { title: 'Lounge', eyebrow: 'After hours', description: 'Cocktails, shared plates and a room that settles into the evening.', href: '/lounge', image: fallbackProducts[4].imageUrl! },
+  ];
+  return (
+    <>
+      <section className="hero" style={{ backgroundImage: `linear-gradient(90deg, rgba(31,5,7,.9), rgba(31,5,7,.3)), url("${hero}")` }}>
+        <div className="hero-content">
+          <p className="eyebrow gold">Restaurant · Bakery · Lounge</p>
+          <h1>{content.settings.heroTitle ?? fallbackSettings.heroTitle}</h1>
+          <p className="hero-copy">{content.settings.heroSubtitle ?? fallbackSettings.heroSubtitle}</p>
+          <div className="hero-actions">
+            <Link href="/restaurant" className="button primary">Order now</Link>
+            <Link href="/reserve" className="button outline-light">Reserve a table</Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="service-gateways" aria-labelledby="service-heading">
+        <div className="section-intro">
+          <p className="eyebrow">Choose your experience</p>
+          <h2 id="service-heading">Three sides of De Big Tank</h2>
+        </div>
+        <div className="service-grid">
+          {services.map((service) => (
+            <Link href={service.href} className="service-card" key={service.title}>
+              <img src={service.image} alt="" />
+              <span className="service-overlay">
+                <small>{service.eyebrow}</small>
+                <strong>{service.title}</strong>
+                <span>{service.description}</span>
+                <b>Explore {service.title} <span aria-hidden="true">→</span></b>
+              </span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="featured-section">
+        <div className="section-heading-row">
+          <div>
+            <p className="eyebrow">From our menus</p>
+            <h2>Made for the whole table</h2>
+          </div>
+          <Link href="/restaurant" className="text-link">Explore every menu <span aria-hidden="true">→</span></Link>
+        </div>
+        <div className="product-grid">
+          {content.products.filter((product) => product.isAvailable).slice(0, 3).map((product) => <ProductTile key={product.id} product={product} add={add} />)}
+        </div>
+      </section>
+
+      <section className="story-section">
+        <div className="story-image"><img src={fallbackProducts[5].imageUrl!} alt="A generous shared plate at De Big Tank" /></div>
+        <div className="story-copy">
+          <p className="eyebrow">Stay a little longer</p>
+          <h2>One house for every kind of gathering.</h2>
+          <p>Lunch that turns into dessert. A quick bakery stop that becomes a celebration order. Drinks that settle into a full evening. De Big Tank brings it all under one roof.</p>
+          <Link href="/about" className="text-link">Our story <span aria-hidden="true">→</span></Link>
+        </div>
+      </section>
+
+      {content.promotions[0] && <PromoFeature promotion={content.promotions[0]} />}
+
+      <section className="gallery-preview">
+        <div className="section-heading-row">
+          <div><p className="eyebrow">Inside De Big Tank</p><h2>A taste of the room</h2></div>
+          <Link href="/gallery" className="text-link">View the gallery <span aria-hidden="true">→</span></Link>
+        </div>
+        <div className="gallery-strip">
+          {content.gallery.slice(0, 4).map((item) => <img key={item.id} src={item.imageUrl} alt={item.altText} />)}
+        </div>
+      </section>
+
+      <section className="closing-cta">
+        <p className="eyebrow gold">Your table is waiting</p>
+        <h2>Come hungry. Leave happy.</h2>
+        <p>Tell us when you’re coming and our team will confirm the details with you directly on WhatsApp.</p>
+        <Link href="/reserve" className="button gold-button">Reserve a table</Link>
+      </section>
+    </>
+  );
+}
+
+function Catalog({ line, products, categories, add }: { line: Line; products: Product[]; categories: Category[]; add: (product: Product, variant?: Variant) => void }) {
+  const [query, setQuery] = useState('');
+  const [category, setCategory] = useState('all');
+  const title = line.charAt(0) + line.slice(1).toLowerCase();
+  const lineProducts = useMemo(() => products.filter((product) =>
+    product.category.serviceLine === line &&
+    (category === 'all' || product.category.slug === category) &&
+    product.name.toLowerCase().includes(query.toLowerCase()),
+  ), [products, line, category, query]);
+  const lineCategories = categories.filter((item) => item.serviceLine === line);
+  return (
+    <div className="page-wrap">
+      <PageHeader
+        eyebrow={`De Big Tank ${title}`}
+        title={line === 'LOUNGE' ? 'Good drinks. Better evenings.' : line === 'BAKERY' ? 'Fresh from our ovens.' : 'The table starts here.'}
+        copy={line === 'LOUNGE' ? 'Cocktails, bottles and shared plates for unhurried nights.' : `Browse the ${title.toLowerCase()} menu, choose your favourites and send your order on WhatsApp.`}
+      />
+      <div className="catalog-tools">
+        <label className="search-field">
+          <span className="sr-only">Search the menu</span>
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search this menu" />
+        </label>
+        <div className="category-tabs" aria-label="Filter by category">
+          <button className={category === 'all' ? 'active' : ''} onClick={() => setCategory('all')}>All</button>
+          {lineCategories.map((item) => <button className={category === item.slug ? 'active' : ''} key={item.id} onClick={() => setCategory(item.slug)}>{item.name}</button>)}
+        </div>
+      </div>
+      {lineProducts.length ? (
+        <div className="product-grid catalog-grid">
+          {lineProducts.map((product) => <ProductTile key={product.id} product={product} add={add} />)}
+        </div>
+      ) : <div className="empty-state"><h2>No matches yet</h2><p>Try another search or category.</p></div>}
+    </div>
+  );
+}
+
+function ProductTile({ product, add }: { product: Product; add: (product: Product, variant?: Variant) => void }) {
+  const availableVariants = product.variants.filter((variant) => variant.isAvailable);
+  const [variantId, setVariantId] = useState(availableVariants[0]?.id ?? '');
+  const variant = availableVariants.find((item) => item.id === variantId);
+  const displayedPrice = Number(product.price) + Number(variant?.priceDelta ?? 0);
+  const canAdd = product.isAvailable && (!product.variants.length || Boolean(variant));
+  return (
+    <article className={`product-card ${!product.isAvailable ? 'sold-out' : ''}`}>
+      <div className="product-image-wrap">
+        <img src={product.imageUrl ?? fallbackProducts[0].imageUrl!} alt={product.altText ?? product.name} />
+        {!product.isAvailable && <span className="sold-out-badge">Sold out</span>}
+      </div>
+      <div className="product-body">
+        <p className="eyebrow">{product.category.name}</p>
+        <h3>{product.name}</h3>
+        <p>{product.description}</p>
+        {product.variants.length > 0 && (
+          <label className="variant-select">
+            <span>Choose an option</span>
+            <select value={variantId} onChange={(event) => setVariantId(event.target.value)} disabled={!product.isAvailable}>
+              {availableVariants.map((item) => <option key={item.id} value={item.id}>{item.name} · {naira(Number(product.price) + Number(item.priceDelta))}</option>)}
+            </select>
+          </label>
+        )}
+        <div className="product-footer">
+          <strong>{naira(displayedPrice)}</strong>
+          <button type="button" disabled={!canAdd} onClick={() => add(product, variant)}>
+            {product.isAvailable ? 'Add to bag' : 'Unavailable'}
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function Gallery({ images }: { images: GalleryImage[] }) {
+  const [selected, setSelected] = useState<GalleryImage | null>(null);
+  return (
+    <div className="page-wrap">
+      <PageHeader eyebrow="Gallery" title="The room, the table, the moment." copy="A glimpse of what we make and the atmosphere we make it in." />
+      <div className="gallery-grid">
+        {images.map((item, index) => (
+          <button type="button" key={item.id} className={index % 5 === 0 ? 'gallery-tall' : ''} onClick={() => setSelected(item)}>
+            <img src={item.imageUrl} alt={item.altText} />
+            {item.caption && <span>{item.caption}</span>}
+          </button>
+        ))}
+      </div>
+      {selected && (
+        <div className="lightbox" role="dialog" aria-modal="true" aria-label={selected.altText} onClick={() => setSelected(null)}>
+          <button type="button" aria-label="Close image" onClick={() => setSelected(null)}>Close</button>
+          <figure onClick={(event) => event.stopPropagation()}>
+            <img src={selected.imageUrl} alt={selected.altText} />
+            {selected.caption && <figcaption>{selected.caption}</figcaption>}
+          </figure>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Promotions({ promotions }: { promotions: Promotion[] }) {
+  return (
+    <div className="page-wrap">
+      <PageHeader eyebrow="Promotions" title="More reasons to gather." copy="Current offers and special moments from across the restaurant, bakery and lounge." />
+      <div className="promotion-grid">
+        {promotions.map((promotion) => (
+          <article key={promotion.id} className="promotion-card">
+            {promotion.imageUrl && <img src={promotion.imageUrl} alt="" />}
+            <div><p className="eyebrow">Current special</p><h2>{promotion.title}</h2><p>{promotion.description}</p></div>
+          </article>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PromoFeature({ promotion }: { promotion: Promotion }) {
+  return (
+    <section className="promo-feature">
+      <div className="promo-image">{promotion.imageUrl && <img src={promotion.imageUrl} alt="" />}</div>
+      <div className="promo-copy"><p className="eyebrow gold">Now at De Big Tank</p><h2>{promotion.title}</h2><p>{promotion.description}</p><Link href="/promotions" className="button outline-light">See current specials</Link></div>
+    </section>
+  );
+}
+
+function About() {
+  return (
+    <div className="editorial-page">
+      <PageHeader eyebrow="Our story" title="One house. Three reasons to stay." copy="De Big Tank brings generous dining, warm baking and effortless lounge evenings together under one roof." />
+      <section className="editorial-split">
+        <img src={fallbackProducts[0].imageUrl!} alt="A colourful meal prepared at De Big Tank" />
+        <div><p className="eyebrow">Our table</p><h2>Hospitality without the fuss.</h2><p>We built De Big Tank around the way people actually gather: a quick meal can become a long conversation, a cake can carry a whole celebration, and the right room can change the pace of an evening.</p><p>Our approach is direct—cook generously, bake fresh, pour thoughtfully and make every guest feel expected.</p></div>
+      </section>
+      <section className="values-row">
+        <div><span>01</span><h3>Generous by nature</h3><p>Plates, portions and service designed to make room for everyone.</p></div>
+        <div><span>02</span><h3>Made with intention</h3><p>From daily bakes to after-hours cocktails, details matter.</p></div>
+        <div><span>03</span><h3>Always welcoming</h3><p>A polished atmosphere that never feels stiff or distant.</p></div>
+      </section>
+    </div>
+  );
+}
+
+function Contact({ settings }: { settings: SiteSettings }) {
+  const hours = Object.entries(settings.businessHours ?? {});
+  return (
+    <div className="contact-page">
+      <section>
+        <p className="eyebrow">Contact</p>
+        <h1>Come through.</h1>
+        <p className="lead">Questions, orders and reservations are easiest on WhatsApp. Our team will take it from there.</p>
+        <div className="contact-lines">
+          <div><span>Call or WhatsApp</span><a href={`tel:${settings.phone ?? ''}`}>{settings.phone ?? 'To be confirmed'}</a></div>
+          <div><span>Email</span><a href={`mailto:${settings.email ?? ''}`}>{settings.email ?? 'To be confirmed'}</a></div>
+          <div><span>Find us</span><p>{settings.address ?? 'Address to be confirmed'}</p></div>
+        </div>
+        <a className="button primary" href={`https://wa.me/${settings.whatsappNumber}`} target="_blank" rel="noreferrer">Chat on WhatsApp</a>
+      </section>
+      <section className="hours-panel">
+        <p className="eyebrow gold">Opening hours</p>
+        <h2>Plan your visit</h2>
+        <dl>{hours.map(([day, time]) => <div key={day}><dt>{day}</dt><dd>{time}</dd></div>)}</dl>
+      </section>
+      <section className="map-panel">
+        {settings.mapEmbedUrl ? <iframe src={settings.mapEmbedUrl} title="De Big Tank location" loading="lazy" /> : <div><p className="eyebrow">Location</p><h2>Map coming soon</h2><p>The exact address and map provider are awaiting final business confirmation.</p></div>}
+      </section>
+    </div>
+  );
+}
+
+function Reservation({ settings }: { settings: SiteSettings }) {
+  const today = new Date().toISOString().split('T')[0];
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const message = [
+      'Hello De Big Tank, I would like to request a reservation.',
+      '',
+      `Name: ${form.get('name')}`,
+      `Phone: ${form.get('phone')}`,
+      `Email: ${form.get('email') || 'Not provided'}`,
+      `Date: ${form.get('date')}`,
+      `Time: ${form.get('time')}`,
+      `Guests: ${form.get('guests')}`,
+      `Area: ${form.get('area')}`,
+      `Special request: ${form.get('notes') || 'None'}`,
+    ].join('\n');
+    window.open(`https://wa.me/${settings.whatsappNumber}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
+  };
+  return (
+    <div className="form-page">
+      <div className="form-intro"><p className="eyebrow">Reservations</p><h1>Save your seat.</h1><p>Your request opens in WhatsApp. Our team will confirm availability and the final details with you directly.</p></div>
+      <form onSubmit={submit} className="reservation-form">
+        <Field label="Name" name="name" required autoComplete="name" />
+        <Field label="Phone" name="phone" required autoComplete="tel" inputMode="tel" pattern="[0-9+ ()-]{7,20}" />
+        <Field label="Email (optional)" name="email" type="email" autoComplete="email" />
+        <label><span>Area or type</span><select name="area"><option>Indoor</option><option>Lounge</option><option>VIP</option><option>Event</option></select></label>
+        <Field label="Date" name="date" type="date" min={today} required />
+        <Field label="Time" name="time" type="time" required />
+        <Field label="Number of guests" name="guests" type="number" min="1" max="100" required />
+        <label className="full"><span>Special request (optional)</span><textarea name="notes" rows={4} maxLength={500} /></label>
+        <button className="button primary full" type="submit">Continue to WhatsApp</button>
+        <p className="form-note full">Nothing is booked until our team confirms with you on WhatsApp.</p>
+      </form>
+    </div>
+  );
+}
+
+function Cart({ items, close, proceed, change }: { items: CartItem[]; close: () => void; proceed: () => void; change: (items: CartItem[]) => void }) {
+  const total = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+  return (
+    <div className="drawer-backdrop" role="presentation" onMouseDown={close}>
+      <aside className="cart-drawer" role="dialog" aria-modal="true" aria-label="Your bag" onMouseDown={(event) => event.stopPropagation()}>
+        <div className="drawer-header"><div><p className="eyebrow">Your order</p><h2>Your bag</h2></div><button onClick={close} aria-label="Close cart">Close</button></div>
+        <div className="cart-items">
+          {!items.length && <div className="empty-cart"><h3>Your bag is empty.</h3><p>Add something from one of our menus to begin.</p><button onClick={close}>Continue browsing</button></div>}
+          {items.map((item) => (
+            <div className="cart-item" key={item.key}>
+              {item.imageUrl && <img src={item.imageUrl} alt="" />}
+              <div className="cart-item-copy">
+                <div className="cart-item-top"><div><strong>{item.name}</strong>{item.variant && <span>{item.variant.name}</span>}<b>{naira(item.unitPrice)}</b></div><button onClick={() => change(items.filter((entry) => entry.key !== item.key))}>Remove</button></div>
+                <div className="quantity">
+                  <button aria-label={`Decrease ${item.name} quantity`} onClick={() => change(items.map((entry) => entry.key === item.key ? { ...entry, quantity: Math.max(1, entry.quantity - 1) } : entry))}>−</button>
+                  <span>{item.quantity}</span>
+                  <button aria-label={`Increase ${item.name} quantity`} onClick={() => change(items.map((entry) => entry.key === item.key ? { ...entry, quantity: entry.quantity + 1 } : entry))}>+</button>
+                </div>
+                <label><span className="sr-only">Special request for {item.name}</span><input placeholder="Add a note" value={item.note} maxLength={240} onChange={(event) => change(items.map((entry) => entry.key === item.key ? { ...entry, note: event.target.value } : entry))} /></label>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="drawer-footer"><div><span>Estimated total</span><strong>{naira(total)}</strong></div><button disabled={!items.length} onClick={proceed}>Continue to order details</button><small>Final availability, delivery and payment are confirmed on WhatsApp.</small></div>
+      </aside>
+    </div>
+  );
+}
+
+function Checkout({ items, settings, close }: { items: CartItem[]; settings: SiteSettings; close: () => void }) {
+  const [orderType, setOrderType] = useState('Pickup');
+  const total = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!items.length) return;
+    const form = new FormData(event.currentTarget);
+    const itemLines = items.map((item) =>
+      `- ${item.quantity}x ${item.name}${item.variant ? ` (${item.variant.name})` : ''}${item.note ? ` — ${item.note}` : ''}: ${naira(item.unitPrice * item.quantity)}`,
+    );
+    const message = [
+      'Hello De Big Tank, I would like to place an order.',
+      '',
+      `Name: ${form.get('name')}`,
+      `Phone: ${form.get('phone')}`,
+      `Order type: ${orderType}`,
+      `Preferred time: ${form.get('time') || 'Not specified'}`,
+      `General notes: ${form.get('notes') || 'None'}`,
+      '',
+      'Items:',
+      ...itemLines,
+      '',
+      `Estimated total: ${naira(total)}`,
+    ].join('\n');
+    window.open(`https://wa.me/${settings.whatsappNumber}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
+  };
+  return (
+    <div className="modal-backdrop" role="presentation">
+      <div className="checkout-modal" role="dialog" aria-modal="true" aria-labelledby="checkout-title">
+        <div className="drawer-header"><div><p className="eyebrow">Almost there</p><h2 id="checkout-title">Order details</h2></div><button onClick={close}>Close</button></div>
+        {!items.length ? <div className="empty-cart"><h3>Your bag is empty.</h3><button onClick={close}>Go back</button></div> : (
+          <form onSubmit={submit} className="checkout-form">
+            <Field label="Name" name="name" required autoComplete="name" />
+            <Field label="Phone" name="phone" required autoComplete="tel" inputMode="tel" pattern="[0-9+ ()-]{7,20}" />
+            <fieldset className="order-type"><legend>Order type</legend><label><input type="radio" name="type" value="Pickup" checked={orderType === 'Pickup'} onChange={() => setOrderType('Pickup')} /> Pickup</label><label><input type="radio" name="type" value="Delivery" checked={orderType === 'Delivery'} onChange={() => setOrderType('Delivery')} /> Delivery</label></fieldset>
+            {orderType === 'Pickup' && <Field label="Preferred pickup time (optional)" name="time" type="time" />}
+            <label><span>General notes (optional)</span><textarea name="notes" rows={3} maxLength={500} /></label>
+            <div className="checkout-summary"><span>{items.reduce((sum, item) => sum + item.quantity, 0)} items</span><strong>{naira(total)}</strong></div>
+            <button className="button primary" type="submit">Open order in WhatsApp</button>
+            <p className="form-note">You’ll review and send the message yourself. No order data is stored by this website.</p>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, ...props }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
+  return <label><span>{label}{props.required ? ' *' : ''}</span><input {...props} /></label>;
+}
+
+function PageHeader({ eyebrow, title, copy }: { eyebrow: string; title: string; copy: string }) {
+  return <header className="page-header"><p className="eyebrow">{eyebrow}</p><h1>{title}</h1><p>{copy}</p></header>;
+}
+
+function Footer({ settings }: { settings: SiteSettings }) {
+  const socialLinks = Object.entries(settings.socialLinks ?? {});
+  return (
+    <footer className="site-footer">
+      <div className="footer-main">
+        <div><span className="footer-brand">De Big Tank</span><p>{settings.tagline}</p></div>
+        <div><h3>Explore</h3>{nav.slice(1, 5).map(([label, href]) => <Link key={href} href={href}>{label}</Link>)}</div>
+        <div><h3>Visit</h3><p>{settings.address}</p><a href={`tel:${settings.phone}`}>{settings.phone}</a></div>
+        <div><h3>Talk to us</h3><a href={`https://wa.me/${settings.whatsappNumber}`} target="_blank" rel="noreferrer">WhatsApp</a>{settings.email && <a href={`mailto:${settings.email}`}>{settings.email}</a>}{socialLinks.map(([name, href]) => <a key={name} href={href} target="_blank" rel="noreferrer">{name}</a>)}</div>
+      </div>
+      <div className="footer-bottom"><span>© {new Date().getFullYear()} De Big Tank</span><span>Restaurant · Bakery · Lounge</span></div>
+    </footer>
+  );
+}

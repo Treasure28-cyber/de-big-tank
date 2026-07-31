@@ -1,30 +1,52 @@
 # Progress
 
-## 2026-07-28 - Phases 1-5: Scaffold and provisional implementation
+## 2026-07-31 — Approved continuation and implementation completion pass
 
-### Built or changed
-- Added an npm-workspace monorepo layout for a Next.js web app and NestJS API.
-- Added a PostgreSQL/Prisma configuration placeholder.
-- Added the supplied Overview, SRS, and DFD documents under `docs/` as source-of-truth documents.
-- Added baseline repository documentation and environment examples.
-- Installed Node.js LTS 24.18.0 and began dependency installation; package installation requires a final verification pass.
-- Added a provisional Prisma content model, staff JWT login, guarded content-management endpoints, and public read endpoints.
-- Added a provisional responsive public UI for all required public pages, a client-side cart, WhatsApp order handoff, and WhatsApp reservation handoff.
-- Added three explicitly provisional documents: schema/SDD draft, API/DTO draft, and screen/layout draft.
+### Work completed
 
-### Deviations
-- The project now uses provisional decisions to continue autonomously, as authorized by the project owner. These must be reviewed against the missing documents before production deployment.
-- Placeholder menu content, WhatsApp number, contact details, address, hours, image URLs, and promotion copy were added only to make the public flow demonstrable. They are not business-approved content.
-- Image upload is represented by externally hosted image URLs; Cloudinary integration is not yet configured because credentials and final upload-flow decisions are unavailable.
+- Audited the existing repository, Git history, supplied ZIP and all six specification documents.
+- Reconciled the provisional schema, screen and API drafts into approved implementation-backed documents.
+- Restored the dependency tree and generated the Prisma client.
+- Added the initial PostgreSQL migration.
+- Activated login throttling, mandatory JWT-secret configuration, active-admin/role checks and strict global request validation.
+- Added complete create/update DTO validation, including nested variants, decimal prices, slugs, URLs, promotion dates and WhatsApp numbers.
+- Added audit-event attribution to every admin content mutation.
+- Updated public product behavior to return sold-out items for disabled display.
+- Added public promotion validity-window filtering and category/search filters.
+- Rebuilt the public experience:
+  - Hero followed immediately by exactly three Restaurant/Bakery/Lounge gateway cards
+  - API-driven content with a presentable offline/demo fallback
+  - Search, category filtering, variant selection and sold-out states
+  - Device-local persistent cart with quantities and per-item notes
+  - Validated order and reservation forms with WhatsApp handoff only
+  - Gallery lightbox, promotions, editorial About, Contact, hours and map states
+  - Mobile navigation and responsive layouts
+- Added the unlinked `/admin` staff workspace:
+  - Login and session handling
+  - Dashboard
+  - Category, product, gallery and promotion create/edit/delete/toggle flows
+  - Site-settings management
+  - Explicit exclusion of orders and reservations
+- Added a brand-aligned social sharing image and metadata.
+- Replaced obsolete lint commands with TypeScript verification.
+- Updated environment examples, `.gitignore`, setup documentation and production requirements.
 
-### Open questions / assumptions
-- The SDD, DTO/API, and Screen Specifications remain missing. Their provisional replacements are `docs/04-pending-sdd-schema-draft.md`, `docs/06-pending-dto-api-specification.md`, and `docs/05-pending-screen-specifications.md`.
-- A PostgreSQL instance, production JWT secret, first admin credentials, real WhatsApp phone number, Cloudinary credentials, business address, and deployment provider accounts are still required.
-- Audit events are modeled but mutation logging is not yet wired to every controller action; this is a remaining NFR-10 item.
+### Verification performed
 
-### Next
-- Complete dependency verification and resolve compile errors.
-- Add the initial admin seed process and full mutation audit logging.
-- Configure a PostgreSQL database and run the first Prisma migration.
-- Replace placeholder public content with CMS data and connect Cloudinary uploads.
-- Add deployment configuration for Vercel and Railway/Render after accounts are confirmed.
+- Prisma client generation succeeded.
+- Prisma schema-to-empty migration diff succeeded.
+- NestJS production build succeeded.
+- Next.js production build succeeded.
+- TypeScript/lint and combined workspace build are included in the final verification pass.
+
+### Deliberate deviations and remaining external inputs
+
+- Cloudinary's signed staff upload flow is implemented and activates when its three environment values are supplied. Hosted image URLs remain available as a fallback.
+- Public fallback imagery and menu content remain demonstrative until the business supplies approved content or staff populate PostgreSQL.
+- Contact details and the WhatsApp number are placeholders in fallback content. They must be replaced before launch.
+- No live PostgreSQL migration or admin login flow was executed because no database connection was supplied.
+- Deployment requires hosting accounts and production environment values.
+
+### Next recommended step
+
+Configure PostgreSQL and production environment values, apply the migration, seed the first administrator, enter approved business content, connect Cloudinary if required, and perform launch QA against the deployed URLs.
