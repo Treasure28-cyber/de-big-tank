@@ -150,7 +150,7 @@ export default function Site({ slug }: { slug?: PublicSlug }) {
       <header className="site-header">
         <div className="header-inner">
           <Link href="/" className="brand" aria-label="De Big Tank home">
-            <span className="brand-mark">BT</span>
+            <img className="brand-logo" src="/brand-logo.jpeg" alt="" />
             <span>
               <strong>De Big Tank</strong>
               <small>Restaurant · Bakery · Lounge</small>
@@ -202,7 +202,6 @@ export default function Site({ slug }: { slug?: PublicSlug }) {
 }
 
 function Home({ content, add }: { content: Content; add: (product: Product, variant?: Variant) => void }) {
-  const hero = content.settings.heroImageUrl ?? fallbackSettings.heroImageUrl!;
   const services = [
     { title: 'Restaurant', eyebrow: 'At the table', description: 'Generous Nigerian favourites, grills and plates built for sharing.', href: '/restaurant', image: fallbackProducts[0].imageUrl! },
     { title: 'Bakery', eyebrow: 'From the oven', description: 'Fresh pastries and celebration cakes made with a personal touch.', href: '/bakery', image: fallbackProducts[2].imageUrl! },
@@ -210,22 +209,31 @@ function Home({ content, add }: { content: Content; add: (product: Product, vari
   ];
   return (
     <>
-      <section className="hero" style={{ backgroundImage: `linear-gradient(90deg, rgba(31,5,7,.9), rgba(31,5,7,.3)), url("${hero}")` }}>
+      <section className="hero">
         <div className="hero-content">
-          <p className="eyebrow gold">Restaurant · Bakery · Lounge</p>
-          <h1>{content.settings.heroTitle ?? fallbackSettings.heroTitle}</h1>
-          <p className="hero-copy">{content.settings.heroSubtitle ?? fallbackSettings.heroSubtitle}</p>
+          <p className="eyebrow">Restaurant · Bakery · Lounge</p>
+          <h1>A little luxury.<br /><em>A lot of flavour.</em></h1>
+          <p className="hero-copy">Bold Nigerian favourites, oven-fresh bakes and slow lounge evenings—all beautifully made, all under one roof.</p>
           <div className="hero-actions">
             <Link href="/restaurant" className="button primary">Order now</Link>
-            <Link href="/reserve" className="button outline-light">Reserve a table</Link>
+            <Link href="/reserve" className="button outline-dark">Reserve a table</Link>
           </div>
         </div>
+        <div className="hero-visual">
+          <img src={fallbackProducts[0].imageUrl!} alt="A vibrant plate from the De Big Tank kitchen" />
+          <span className="hero-stamp">Made fresh<br />served beautifully</span>
+        </div>
+        <span className="doodle doodle-croissant" aria-hidden="true">🥐</span>
+      </section>
+
+      <section className="marquee" aria-label="De Big Tank offerings">
+        <span>good food</span><b>✦</b><span>fresh bakes</span><b>✦</b><span>fine evenings</span><b>✦</b><span>beautiful moments</span>
       </section>
 
       <section className="service-gateways" aria-labelledby="service-heading">
-        <div className="section-intro">
-          <p className="eyebrow">Choose your experience</p>
-          <h2 id="service-heading">Three sides of De Big Tank</h2>
+        <div className="section-intro align-left">
+          <p className="eyebrow">Whatever you came for</p>
+          <h2 id="service-heading">There’s always something<br /><em>worth staying for.</em></h2>
         </div>
         <div className="service-grid">
           {services.map((service) => (
@@ -256,12 +264,13 @@ function Home({ content, add }: { content: Content; add: (product: Product, vari
       </section>
 
       <section className="story-section">
-        <div className="story-image"><img src={fallbackProducts[5].imageUrl!} alt="A generous shared plate at De Big Tank" /></div>
+        <div className="story-image"><img src="/lounge-interior.jpeg" alt="The warm, elegant lounge at De Big Tank" /></div>
         <div className="story-copy">
           <p className="eyebrow">Stay a little longer</p>
-          <h2>One house for every kind of gathering.</h2>
+          <h2>Your new favourite place to <em>unwind.</em></h2>
           <p>Lunch that turns into dessert. A quick bakery stop that becomes a celebration order. Drinks that settle into a full evening. De Big Tank brings it all under one roof.</p>
           <Link href="/about" className="text-link">Our story <span aria-hidden="true">→</span></Link>
+          <span className="script-note">stay awhile ♡</span>
         </div>
       </section>
 

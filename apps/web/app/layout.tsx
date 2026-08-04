@@ -12,13 +12,13 @@ export const metadata: Metadata = {
     title: 'De Big Tank | Restaurant, Bakery & Lounge',
     description: 'One house. Three ways to gather.',
     type: 'website',
-    images: [{ url: '/og.png', width: 1732, height: 909, alt: 'De Big Tank — Restaurant, Bakery and Lounge' }],
+    images: [{ url: '/og-v2.png', width: 1732, height: 909, alt: 'De Big Tank — Restaurant, Bakery and Lounge' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'De Big Tank | Restaurant, Bakery & Lounge',
     description: 'One house. Three ways to gather.',
-    images: ['/og.png'],
+    images: ['/og-v2.png'],
   },
 };
 
