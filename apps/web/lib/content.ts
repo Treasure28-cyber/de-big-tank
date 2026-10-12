@@ -72,18 +72,18 @@ const categories: Category[] = [
 ];
 
 const image = {
-  jollof: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=1200&q=82',
+  jollof: '/jollof-chicken-plantain.jpg',
   suya: 'https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?auto=format&fit=crop&w=1200&q=82',
-  cake: 'https://images.unsplash.com/photo-1586788680434-30d324a6cda3?auto=format&fit=crop&w=1200&q=82',
+  cake: '/celebration-cake.jpg',
   pastry: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1200&q=82',
   cocktail: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=1200&q=82',
   platter: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=1200&q=82',
 };
 
 export const fallbackProducts: Product[] = [
-  { id: 'jollof', name: 'Rice', slug: 'smoky-jollof-rice', description: 'Slow-cooked party jollof with grilled chicken and ripe plantain. The version that makes people ask for the recipe.', price: 6500, imageUrl: image.jollof, altText: 'Smoky jollof rice served with grilled chicken', isAvailable: true, allowsSpecialNotes: false, category: categories[0], variants: [] },
+  { id: 'jollof', name: 'Rice', slug: 'smoky-jollof-rice', description: 'Slow-cooked party jollof with grilled chicken and ripe plantain. The version that makes people ask for the recipe.', price: 6500, imageUrl: image.jollof, altText: 'Nigerian jollof rice with grilled chicken and golden fried plantain', isAvailable: true, allowsSpecialNotes: false, category: categories[0], variants: [] },
   { id: 'suya', name: 'Smoked Beef Ribs', slug: 'beef-suya-platter', description: 'Spiced, smoked and fall-off-the-bone. Served with house pepper sauce and a side of your choice.', price: 7200, imageUrl: image.suya, altText: 'Smoked beef ribs with house pepper sauce', isAvailable: true, allowsSpecialNotes: false, category: categories[1], variants: [] },
-  { id: 'cake', name: 'Celebration Cake', slug: 'red-velvet-cake', description: 'Four tender layers of moist sponge with cream cheese frosting, finished to order. Built for the moments that deserve more than candles.', price: 18500, imageUrl: image.cake, altText: 'Celebration cake with cream cheese frosting', isAvailable: true, allowsSpecialNotes: true, category: categories[2], variants: [{ id: 'cake-8', name: '8 inch', priceDelta: 0, isAvailable: true }, { id: 'cake-10', name: '10 inch', priceDelta: 5500, isAvailable: true }] },
+  { id: 'cake', name: 'Celebration Cake', slug: 'red-velvet-cake', description: 'Four tender layers of moist sponge with cream cheese frosting, finished to order. Built for the moments that deserve more than candles.', price: 18500, imageUrl: image.cake, altText: 'Celebration cake with white flowers and chocolate drips', isAvailable: true, allowsSpecialNotes: true, category: categories[2], variants: [{ id: 'cake-8', name: '8 inch', priceDelta: 0, isAvailable: true }, { id: 'cake-10', name: '10 inch', priceDelta: 5500, isAvailable: true }] },
   { id: 'croissant', name: 'Butter Croissant', slug: 'butter-croissant', description: 'Freshly baked, crisp and deeply buttery.', price: 2200, imageUrl: image.pastry, altText: 'Fresh butter croissants', isAvailable: false, allowsSpecialNotes: false, category: categories[3], variants: [] },
   { id: 'mojito', name: 'Passionfruit Mojito', slug: 'passionfruit-mojito', description: 'Fresh mint, citrus and passionfruit over ice.', price: 5500, imageUrl: image.cocktail, altText: 'Passionfruit mojito cocktail', isAvailable: true, allowsSpecialNotes: false, category: categories[4], variants: [{ id: 'mojito-zero', name: 'Zero-proof', priceDelta: -500, isAvailable: true }, { id: 'mojito-classic', name: 'Classic', priceDelta: 0, isAvailable: true }] },
   { id: 'platter', name: 'After Hours Platter', slug: 'after-hours-platter', description: 'Wings, fries, sliders and signature dips for the table.', price: 14500, imageUrl: image.platter, altText: 'Shared platter with wings, fries and sliders', isAvailable: true, allowsSpecialNotes: false, category: categories[5], variants: [] },
@@ -91,12 +91,14 @@ export const fallbackProducts: Product[] = [
 
 export const fallbackCategories = categories;
 
-export const fallbackGallery: GalleryImage[] = fallbackProducts.map((product) => ({
-  id: `gallery-${product.id}`,
-  imageUrl: product.imageUrl!,
-  altText: product.altText ?? product.name,
-  caption: product.name,
-}));
+export const fallbackGallery: GalleryImage[] = [
+  { id: 'gallery-jollof', imageUrl: image.jollof, altText: 'Jollof rice, chicken and fried plantain on a black plate', caption: 'Nigerian favourites' },
+  { id: 'gallery-sharing-jollof', imageUrl: '/jollof-sharing-platter.jpg', altText: 'A sharing platter of jollof rice topped with grilled chicken', caption: 'Made for the whole table' },
+  { id: 'gallery-cake', imageUrl: image.cake, altText: 'A celebration cake decorated with white flowers and chocolate drips', caption: 'Celebration cakes' },
+  { id: 'gallery-bread', imageUrl: '/artisan-bread.jpg', altText: 'Sliced golden bread served with butter', caption: 'Freshly baked bread' },
+  { id: 'gallery-banana-bread', imageUrl: '/banana-nut-bread.jpg', altText: 'Banana bread with walnuts, banana slices and chocolate chips', caption: 'Banana nut bread' },
+  { id: 'gallery-red-velvet', imageUrl: '/red-velvet-slice.jpg', altText: 'A slice of red velvet cake layered with cream cheese frosting', caption: 'A little something sweet' },
+];
 
 export const fallbackPromotions: Promotion[] = [
   { id: 'friday', title: 'Friday Lounge Service.', description: 'Gather your people. Signature cocktails, shared plates and the right energy to close out the week properly. Reservations recommended.', imageUrl: image.cocktail },

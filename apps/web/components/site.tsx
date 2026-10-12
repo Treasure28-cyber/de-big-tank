@@ -332,8 +332,8 @@ export default function Site({ slug }: { slug?: PublicSlug }) {
 
 function Home({ content, add }: { content: Content; add: (product: Product, variant?: Variant) => void }) {
   const services = [
-    { number: '01', title: 'Restaurant', eyebrow: 'Eat generously', description: 'Nigerian favourites done properly. Fire-kissed grills, slow-cooked stews, rice the way it’s meant to taste and plates generous enough for the whole table.', href: '/restaurant', image: '/restaurant-hero-overlay.webp', action: 'See the food menu' },
-    { number: '02', title: 'Bakery', eyebrow: 'Made fresh daily', description: 'Artisan breads, buttery pastries and celebration cakes built layer by layer. Whether you need something for the morning or something to mark the moment, it starts here.', href: '/bakery', image: '/bakery-hero-overlay.webp', action: 'Visit the bakery' },
+    { number: '01', title: 'Restaurant', eyebrow: 'Eat generously', description: 'Nigerian favourites done properly. Fire-kissed grills, slow-cooked stews, rice the way it’s meant to taste and plates generous enough for the whole table.', href: '/restaurant', image: '/jollof-sharing-platter.jpg', action: 'See the food menu' },
+    { number: '02', title: 'Bakery', eyebrow: 'Made fresh daily', description: 'Artisan breads, buttery pastries and celebration cakes built layer by layer. Whether you need something for the morning or something to mark the moment, it starts here.', href: '/bakery', image: '/artisan-bread.jpg', action: 'Visit the bakery' },
     { number: '03', title: 'Lounge', eyebrow: 'Stay after dark', description: 'Considered cocktails, shared plates and unhurried conversation. The kind of evening that earns its own story. Pull up a seat and let the night decide the rest.', href: '/lounge', image: '/lounge-interior.jpeg', action: 'Enter the lounge' },
   ];
   return (
@@ -477,6 +477,7 @@ function Catalog({ line, products, categories, add }: { line: Line; products: Pr
     notes: ['Made to order', 'Local favourites', 'Family portions'],
   };
   return (
+    <>
     <div className="page-wrap">
       <section className={`menu-hero menu-hero-${line.toLowerCase()}`}>
         <img className="menu-hero-background" src={hero.image} alt={hero.alt} />
@@ -510,6 +511,15 @@ function Catalog({ line, products, categories, add }: { line: Line; products: Pr
         </div>
       ) : <div className="empty-state"><h2>No matches yet</h2><p>Try another search or category.</p></div>}
     </div>
+      {line === 'BAKERY' && <section className="bakery-photo-section" aria-labelledby="bakery-photo-heading">
+        <div className="section-heading-row"><div><p className="eyebrow">From the bakery</p><h2 id="bakery-photo-heading">Fresh bakes. Sweet moments.</h2></div></div>
+        <div className="bakery-photo-grid">{[
+          ['/artisan-bread.jpg', 'Artisan bread', 'Sliced golden bread served with butter'],
+          ['/banana-nut-bread.jpg', 'Banana nut bread', 'Banana bread topped with walnuts and chocolate chips'],
+          ['/red-velvet-slice.jpg', 'Celebration layers', 'Red velvet cake layered with cream cheese frosting'],
+        ].map(([src, caption, alt]) => <figure key={src}><img src={src} alt={alt} loading="lazy" /><figcaption>{caption}</figcaption></figure>)}</div>
+      </section>}
+    </>
   );
 }
 

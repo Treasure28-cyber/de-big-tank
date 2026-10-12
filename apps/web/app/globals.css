@@ -2081,6 +2081,16 @@ html, body { max-width: 100%; overflow-x: clip; }
 .site-shell[data-theme="dark"] .catalog-grid .product-card,
 .site-shell[data-theme="dark"] .catalog-grid .product-card + .product-card { background: #151517; color: #f7f4ee; }
 .gallery-subline { margin: 1rem 0 0; color: var(--muted); font-size: 1rem; line-height: 1.6; }
+.bakery-photo-section { width: min(100% - 4rem,1320px); margin: 4rem auto; padding-top: 2rem; border-top: 1px solid var(--line); }
+.bakery-photo-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 1.25rem; }
+.bakery-photo-grid figure { min-width: 0; margin: 0; }
+.bakery-photo-grid img { width: 100%; aspect-ratio: 4 / 3; border-radius: 16px; object-fit: cover; }
+.bakery-photo-grid figcaption { padding: 1rem .25rem; color: var(--ink); font-family: Georgia,serif; font-size: 1.3rem; }
+@media (max-width: 760px) {
+  .bakery-photo-section { width: calc(100% - 2rem); }
+  .bakery-photo-grid { grid-template-columns: 1fr; }
+  .bakery-photo-grid img { aspect-ratio: 4 / 3; }
+}
 .site-shell .footer-main > div { min-width: 0; }
 .site-shell .footer-main a,.site-shell .contact-lines a { overflow-wrap: anywhere; }
 @media (min-width: 1101px) {
