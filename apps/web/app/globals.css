@@ -2080,6 +2080,16 @@ html, body { max-width: 100%; overflow-x: clip; }
 .site-shell[data-theme="dark"] .service-card { background: #22201e; }
 .site-shell[data-theme="dark"] .catalog-grid .product-card,
 .site-shell[data-theme="dark"] .catalog-grid .product-card + .product-card { background: #151517; color: #f7f4ee; }
+.gallery-subline { margin: 1rem 0 0; color: var(--muted); font-size: 1rem; line-height: 1.6; }
+.site-shell .footer-main > div { min-width: 0; }
+.site-shell .footer-main a,.site-shell .contact-lines a { overflow-wrap: anywhere; }
+@media (min-width: 1101px) {
+  .site-shell .footer-main { grid-template-columns: 1.25fr .65fr 1.15fr 1.3fr .8fr; gap: 1.5rem; }
+}
+@media (min-width: 761px) and (max-width: 1100px) {
+  .site-shell .footer-main { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .site-shell .footer-main > div:first-child { grid-column: 1 / -1; }
+}
 
 @media (max-width: 1100px) {
   .site-shell { --header-height: 72px; }
@@ -2153,6 +2163,7 @@ html, body { max-width: 100%; overflow-x: clip; }
   .site-shell .closing-cta { width: calc(100% - 2rem); margin: 2rem auto; border-radius: 20px; padding: 3rem 1.5rem; }
   .site-shell .closing-cta h2 { font-size: clamp(2.5rem,10vw,3.8rem); }
   .site-shell .catalog-tools { top: var(--header-height); }
+  .site-shell .catalog-grid .product-body > p:not(.eyebrow) { display: block; overflow: visible; -webkit-line-clamp: unset; }
   .site-shell[data-theme="dark"] .catalog-tools { background: rgba(21,21,23,.97); }
   .site-shell[data-theme="dark"] .category-tabs button { border-color: rgba(255,255,255,.18); background: #222225; color: #f2d28c; }
   .site-shell[data-theme="dark"] .category-tabs button.active { border-color: #d71920; background: #d71920; color: white; }

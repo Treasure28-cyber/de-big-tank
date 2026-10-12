@@ -12,9 +12,9 @@ const categories = [
 ];
 
 const products = [
-  { id: 'jollof', name: 'Smoky Jollof Rice', slug: 'smoky-jollof-rice', description: 'Slow-cooked party jollof with grilled chicken and plantain.', price: 6500, imageUrl: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=1200&q=82', altText: 'Smoky jollof rice served with grilled chicken', isAvailable: true, allowsSpecialNotes: false, categorySlug: 'mains', variants: [] },
-  { id: 'suya', name: 'Beef Suya Platter', slug: 'beef-suya-platter', description: 'Spiced beef, onions, tomatoes and house pepper sauce.', price: 7200, imageUrl: 'https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?auto=format&fit=crop&w=1200&q=82', altText: 'Spiced beef suya platter', isAvailable: true, allowsSpecialNotes: false, categorySlug: 'grills', variants: [] },
-  { id: 'cake', name: 'Red Velvet Celebration Cake', slug: 'red-velvet-cake', description: 'Four tender layers with cream cheese frosting, made for celebrations.', price: 18500, imageUrl: 'https://images.unsplash.com/photo-1586788680434-30d324a6cda3?auto=format&fit=crop&w=1200&q=82', altText: 'Red velvet celebration cake', isAvailable: true, allowsSpecialNotes: true, categorySlug: 'cakes', variants: [{ name: '8 inch', priceDelta: 0 }, { name: '10 inch', priceDelta: 6500 }] },
+  { id: 'jollof', name: 'Rice', slug: 'smoky-jollof-rice', description: 'Slow-cooked party jollof with grilled chicken and ripe plantain. The version that makes people ask for the recipe.', price: 6500, imageUrl: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=1200&q=82', altText: 'Smoky jollof rice served with grilled chicken', isAvailable: true, allowsSpecialNotes: false, categorySlug: 'mains', variants: [] },
+  { id: 'suya', name: 'Smoked Beef Ribs', slug: 'beef-suya-platter', description: 'Spiced, smoked and fall-off-the-bone. Served with house pepper sauce and a side of your choice.', price: 7200, imageUrl: 'https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?auto=format&fit=crop&w=1200&q=82', altText: 'Smoked beef ribs with house pepper sauce', isAvailable: true, allowsSpecialNotes: false, categorySlug: 'grills', variants: [] },
+  { id: 'cake', name: 'Celebration Cake', slug: 'red-velvet-cake', description: 'Four tender layers of moist sponge with cream cheese frosting, finished to order. Built for the moments that deserve more than candles.', price: 18500, imageUrl: 'https://images.unsplash.com/photo-1586788680434-30d324a6cda3?auto=format&fit=crop&w=1200&q=82', altText: 'Celebration cake with cream cheese frosting', isAvailable: true, allowsSpecialNotes: true, categorySlug: 'cakes', variants: [{ name: '8 inch', priceDelta: 0 }, { name: '10 inch', priceDelta: 5500 }] },
   { id: 'croissant', name: 'Butter Croissant', slug: 'butter-croissant', description: 'Freshly baked, crisp and deeply buttery.', price: 2200, imageUrl: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1200&q=82', altText: 'Fresh butter croissants', isAvailable: false, allowsSpecialNotes: false, categorySlug: 'pastries', variants: [] },
   { id: 'mojito', name: 'Passionfruit Mojito', slug: 'passionfruit-mojito', description: 'Fresh mint, citrus and passionfruit over ice.', price: 5500, imageUrl: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=1200&q=82', altText: 'Passionfruit mojito cocktail', isAvailable: true, allowsSpecialNotes: false, categorySlug: 'cocktails', variants: [{ name: 'Zero-proof', priceDelta: -500 }, { name: 'Classic', priceDelta: 0 }] },
   { id: 'platter', name: 'After Hours Platter', slug: 'after-hours-platter', description: 'Wings, fries, sliders and signature dips for the table.', price: 14500, imageUrl: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=1200&q=82', altText: 'Shared platter with wings, fries and sliders', isAvailable: true, allowsSpecialNotes: false, categorySlug: 'shared-plates', variants: [] },
@@ -48,24 +48,33 @@ async function main() {
     console.log(`Imported ${saved.name}`);
   }
 
+  const settings = {
+    businessName: 'De Big Tank',
+    tagline: 'Restaurant · Bakery · Lounge',
+    whatsappNumber: '2347037236666',
+    phone: '07037236666',
+    email: 'de.bigtankassociate@gmail.com',
+    address: 'Km 1 Ugbomoro Road, Warri, Delta State, Nigeria',
+    businessHours: { Restaurant: '11am – 10pm', Bakery: '9am – 8pm', Lounge: '6pm – 11pm' },
+    heroTitle: 'One house. Three moods.',
+    heroSubtitle: 'Restaurant. Bakery. Lounge. One address for every version of your day, from the first craving to the last round.',
+  };
   await prisma.siteSettings.upsert({
     where: { id: 'default' },
-    update: { address: 'Warri, Delta State, Nigeria — full address to be confirmed' },
-    create: {
-      id: 'default',
-      businessName: 'De Big Tank',
-      tagline: 'Restaurant, Bakery & Lounge',
-      whatsappNumber: '2348000000000',
-      phone: '+234 800 000 0000',
-      email: 'hello@de-bigtank.example',
-      address: 'Warri, Delta State, Nigeria — full address to be confirmed',
-      businessHours: { Monday: '10:00am – 11:00pm', Tuesday: '10:00am – 11:00pm', Wednesday: '10:00am – 11:00pm', Thursday: '10:00am – 11:00pm', Friday: '10:00am – late', Saturday: '10:00am – late', Sunday: '12:00pm – 10:00pm' },
-      socialLinks: {},
-      heroTitle: 'One house. Three ways to gather.',
-      heroSubtitle: 'Come for generous plates, fresh bakes and evenings that settle into something special.',
-      heroImageUrl: 'https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?auto=format&fit=crop&w=2000&q=88',
-      heroImageAlt: 'A table filled with colourful dishes',
-    },
+    update: settings,
+    create: { id: 'default', ...settings, socialLinks: {} },
+  });
+
+  const friday = {
+    title: 'Friday Lounge Service.',
+    description: 'Gather your people. Signature cocktails, shared plates and the right energy to close out the week properly. Reservations recommended.',
+    imageUrl: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=1200&q=82',
+    isActive: true,
+  };
+  await prisma.promotion.upsert({
+    where: { slug: 'friday-lounge-service' },
+    update: friday,
+    create: { id: 'friday', slug: 'friday-lounge-service', ...friday },
   });
 }
 

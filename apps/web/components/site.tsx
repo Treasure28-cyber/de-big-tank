@@ -332,9 +332,9 @@ export default function Site({ slug }: { slug?: PublicSlug }) {
 
 function Home({ content, add }: { content: Content; add: (product: Product, variant?: Variant) => void }) {
   const services = [
-    { number: '01', title: 'Restaurant', eyebrow: 'Eat generously', description: 'Nigerian favourites, fire-kissed grills and abundant plates made for the whole table.', href: '/restaurant', image: '/restaurant-hero-overlay.webp', action: 'See the food menu' },
-    { number: '02', title: 'Bakery', eyebrow: 'Made fresh daily', description: 'Buttery pastries, beautiful cakes and small sweet things worth making a stop for.', href: '/bakery', image: '/bakery-hero-overlay.webp', action: 'Visit the bakery' },
-    { number: '03', title: 'Lounge', eyebrow: 'Stay after dark', description: 'Considered cocktails, shared plates and the right soundtrack for unhurried evenings.', href: '/lounge', image: '/lounge-interior.jpeg', action: 'Enter the lounge' },
+    { number: '01', title: 'Restaurant', eyebrow: 'Eat generously', description: 'Nigerian favourites done properly. Fire-kissed grills, slow-cooked stews, rice the way it’s meant to taste and plates generous enough for the whole table.', href: '/restaurant', image: '/restaurant-hero-overlay.webp', action: 'See the food menu' },
+    { number: '02', title: 'Bakery', eyebrow: 'Made fresh daily', description: 'Artisan breads, buttery pastries and celebration cakes built layer by layer. Whether you need something for the morning or something to mark the moment, it starts here.', href: '/bakery', image: '/bakery-hero-overlay.webp', action: 'Visit the bakery' },
+    { number: '03', title: 'Lounge', eyebrow: 'Stay after dark', description: 'Considered cocktails, shared plates and unhurried conversation. The kind of evening that earns its own story. Pull up a seat and let the night decide the rest.', href: '/lounge', image: '/lounge-interior.jpeg', action: 'Enter the lounge' },
   ];
   return (
     <>
@@ -343,9 +343,9 @@ function Home({ content, add }: { content: Content; add: (product: Product, vari
         <div className="hero-content">
           <p className="eyebrow"><span className="hero-status-dot" /> Warri, Delta State / Open daily</p>
           <h1>One house.<br /><em>Three moods.</em></h1>
-          <p className="hero-copy">A restaurant, bakery and lounge for every version of your day—from the first craving to the last round.</p>
+          <p className="hero-copy">Restaurant. Bakery. Lounge. One address for every version of your day, from the first craving to the last round.</p>
           <div className="hero-actions">
-            <Link href="#three-ways" className="button primary">Choose your mood <span aria-hidden="true">↘</span></Link>
+            <Link href="#three-ways" className="button primary">Choose your mood <span aria-hidden="true">↓</span></Link>
             <Link href="/reserve" className="button outline-dark">Book a table</Link>
           </div>
           <div className="hero-experiences" aria-label="Explore our experiences">
@@ -366,10 +366,10 @@ function Home({ content, add }: { content: Content; add: (product: Product, vari
         <div className="service-grid">
           {services.map((service) => (
             <Link href={service.href} className="service-card" key={service.title}>
-              <span className="service-card-top"><small>{service.number} / 03</small><small>{service.eyebrow}</small></span>
+              <span className="service-card-top"><small>{service.number} /</small><small>{service.eyebrow}</small></span>
               <span className="service-card-image"><img src={service.image} alt="" /></span>
               <span className="service-card-copy"><strong>{service.title}</strong><span>{service.description}</span></span>
-              <b>{service.action} <span aria-hidden="true">↗</span></b>
+              <b>{service.action} <span aria-hidden="true">→</span></b>
             </Link>
           ))}
         </div>
@@ -379,9 +379,9 @@ function Home({ content, add }: { content: Content; add: (product: Product, vari
         <div className="section-heading-row">
           <div>
             <p className="eyebrow">From our menus</p>
-            <h2>Made for the whole table</h2>
+            <h2>Made for the whole table.</h2>
           </div>
-          <Link href="/restaurant" className="text-link">Explore every menu <span aria-hidden="true">→</span></Link>
+          <Link href="/menu" className="text-link">Explore every menu <span aria-hidden="true">→</span></Link>
         </div>
         <div className="product-grid">
           {content.products.filter((product) => product.isAvailable).slice(0, 3).map((product) => <ProductTile key={product.id} product={product} add={add} />)}
@@ -393,7 +393,7 @@ function Home({ content, add }: { content: Content; add: (product: Product, vari
         <div className="story-copy">
           <p className="eyebrow">Stay a little longer</p>
           <h2>Your new favourite place to <em>unwind.</em></h2>
-          <p>Lunch that turns into dessert. A quick bakery stop that becomes a celebration order. Drinks that settle into a full evening. De Big Tank brings it all under one roof.</p>
+          <p>Lunch that turns into dessert. A bakery stop that becomes a celebration order. Drinks that ease into a full evening. De Big Tank brings it all under one roof because the best days rarely stick to the plan.</p>
           <Link href="/about" className="text-link">Our story <span aria-hidden="true">→</span></Link>
           <span className="script-note">stay awhile ♡</span>
         </div>
@@ -403,7 +403,7 @@ function Home({ content, add }: { content: Content; add: (product: Product, vari
 
       <section className="gallery-preview">
         <div className="section-heading-row">
-          <div><p className="eyebrow">Inside De Big Tank</p><h2>A taste of the room</h2></div>
+          <div><p className="eyebrow">Inside De Big Tank</p><h2>A taste of the room.</h2><p className="gallery-subline">Come for the food. Stay for everything else.</p></div>
         </div>
         <div className="gallery-strip">
           {content.gallery.slice(0, 4).map((item) => <img key={item.id} src={item.imageUrl} alt={item.altText} />)}
@@ -413,7 +413,7 @@ function Home({ content, add }: { content: Content; add: (product: Product, vari
       <section className="closing-cta">
         <p className="eyebrow gold">Your table is waiting</p>
         <h2>Come hungry. Leave happy.</h2>
-        <p>Tell us when you’re coming and our team will confirm the details with you directly on WhatsApp.</p>
+        <p>Tell us when you’re coming and our team will confirm the details with you directly on WhatsApp. Walk-ins welcome, reservations preferred.</p>
         <Link href="/reserve" className="button gold-button">Reserve a table</Link>
       </section>
     </>
@@ -562,7 +562,7 @@ function PromoFeature({ promotion }: { promotion: Promotion }) {
   return (
     <section className="promo-feature">
       <div className="promo-image">{promotion.imageUrl && <img src={promotion.imageUrl} alt="" />}</div>
-      <div className="promo-copy"><p className="eyebrow gold">Now at De Big Tank</p><h2>{promotion.title}</h2><p>{promotion.description}</p><Link href="/contact" className="button outline-light">Ask about this offer</Link></div>
+      <div className="promo-copy"><p className="eyebrow gold">{promotion.id === 'friday' || promotion.slug === 'friday-lounge-service' ? 'Every Friday from 6pm' : 'Now at De Big Tank'}</p><h2>{promotion.title}</h2><p>{promotion.description}</p><Link href="/contact" className="button outline-light">Ask about this offer</Link></div>
     </section>
   );
 }
@@ -759,8 +759,9 @@ function Footer({ settings }: { settings: SiteSettings }) {
           <p>{settings.tagline}</p>
         </div>
         <div><h3>Explore</h3>{nav.slice(1, 5).map(([label, href]) => <Link key={href} href={href}>{label}</Link>)}</div>
-        <div><h3>Visit</h3><p>{settings.address}</p><a href={`tel:${settings.phone}`}>{settings.phone}</a></div>
-        <div><h3>Talk to us</h3><a href={`https://wa.me/${settings.whatsappNumber}`} target="_blank" rel="noreferrer">WhatsApp</a>{settings.email && <a href={`mailto:${settings.email}`}>{settings.email}</a>}{socialLinks.map(([name, href]) => <a key={name} href={href} target="_blank" rel="noreferrer">{name}</a>)}</div>
+        <div><h3>Visit</h3><p>{settings.address}</p></div>
+        <div><h3>Talk to us</h3><a href={`https://wa.me/${settings.whatsappNumber}`} target="_blank" rel="noreferrer">WhatsApp: {settings.phone ?? settings.whatsappNumber}</a>{settings.email && <a href={`mailto:${settings.email}`}>Email: {settings.email}</a>}{socialLinks.map(([name, href]) => <a key={name} href={href} target="_blank" rel="noreferrer">{name}</a>)}</div>
+        <div><h3>Open daily</h3>{Object.entries(settings.businessHours ?? {}).map(([service, hours]) => <p key={service}>{service}: {hours}</p>)}</div>
       </div>
       <div className="footer-bottom"><span>© {new Date().getFullYear()} De Big Tank</span><span>Restaurant · Bakery · Lounge</span></div>
     </footer>

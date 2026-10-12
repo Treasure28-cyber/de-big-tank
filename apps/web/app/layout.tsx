@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'De Big Tank | Restaurant, Bakery & Lounge',
-    description: 'One house. Three ways to gather.',
+    description: 'One house. Three moods.',
     images: ['/og-v2.webp'],
   },
 };
@@ -40,11 +40,14 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         '@type': ['Restaurant', 'Bakery', 'BarOrPub'],
         '@id': `${siteUrl}/#organization`,
         name: 'De Big Tank',
+        telephone: '+2347037236666',
+        email: 'de.bigtankassociate@gmail.com',
         url: siteUrl,
         logo: `${siteUrl}/brand-logo-maroon.webp`,
         description: 'A restaurant, bakery and lounge in Warri, Delta State for Nigerian food, fresh baking, cocktails and memorable evenings.',
         address: {
           '@type': 'PostalAddress',
+          streetAddress: 'Km 1 Ugbomoro Road',
           addressLocality: 'Warri',
           addressRegion: 'Delta State',
           addressCountry: 'NG',
