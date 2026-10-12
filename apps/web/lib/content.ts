@@ -108,7 +108,7 @@ export const fallbackSettings: SiteSettings = {
   whatsappNumber: '2348000000000',
   phone: '+234 800 000 0000',
   email: 'hello@de-bigtank.example',
-  address: 'Lagos, Nigeria — full address to be confirmed',
+  address: 'Warri, Delta State, Nigeria — full address to be confirmed',
   businessHours: { Monday: '10:00am – 11:00pm', Tuesday: '10:00am – 11:00pm', Wednesday: '10:00am – 11:00pm', Thursday: '10:00am – 11:00pm', Friday: '10:00am – late', Saturday: '10:00am – late', Sunday: '12:00pm – 10:00pm' },
   heroTitle: 'One house. Three ways to gather.',
   heroSubtitle: 'Come for generous plates, fresh bakes and evenings that settle into something special.',

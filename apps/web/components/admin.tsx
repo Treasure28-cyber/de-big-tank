@@ -3,7 +3,7 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-type Tab = 'overview' | 'categories' | 'products' | 'gallery' | 'promotions' | 'settings';
+type Tab = 'overview' | 'categories' | 'products' | 'gallery' | 'settings';
 type RecordValue = Record<string, unknown>;
 
 export default function Admin() {
@@ -124,14 +124,16 @@ export default function Admin() {
   return (
     <div className="admin-shell">
       <aside className="admin-sidebar">
-        <div className="admin-brand"><span>BT</span><div><strong>De Big Tank</strong><small>Staff workspace</small></div></div>
+        <a className="admin-brand" href="/" target="_blank" rel="noreferrer" aria-label="Open the De Big Tank public website">
+          <img className="admin-brand-logo" src="/brand-logo-maroon.webp" alt="" />
+          <div><strong>De Big Tank</strong><small>Staff workspace</small></div>
+        </a>
         <nav>
           {([
             ['overview', 'Overview'],
             ['categories', 'Categories'],
             ['products', 'Menu items'],
             ['gallery', 'Gallery'],
-            ['promotions', 'Promotions'],
             ['settings', 'Site settings'],
           ] as [Tab, string][]).map(([value, label]) => <button key={value} className={tab === value ? 'active' : ''} onClick={() => setTab(value)}>{label}</button>)}
         </nav>
@@ -146,7 +148,6 @@ export default function Admin() {
           tab === 'categories' ? <CategoryManager records={records} editing={editing} setEditing={setEditing} mutate={mutate} /> :
           tab === 'products' ? <ProductManager records={records} categories={categories} editing={editing} setEditing={setEditing} mutate={mutate} /> :
           tab === 'gallery' ? <GalleryManager records={records} editing={editing} setEditing={setEditing} mutate={mutate} /> :
-          tab === 'promotions' ? <PromotionManager records={records} editing={editing} setEditing={setEditing} mutate={mutate} /> :
           <SettingsManager settings={settings} mutate={mutate} />}
       </main>
     </div>
@@ -156,8 +157,8 @@ export default function Admin() {
 function AdminLogin({ submit, loading, error }: { submit: (event: FormEvent<HTMLFormElement>) => void; loading: boolean; error: string }) {
   return (
     <main className="admin-login">
-      <section className="admin-login-brand"><div><span className="admin-login-mark">BT</span><p>De Big Tank</p><h1>Everything guests see, managed in one place.</h1><small>Restaurant · Bakery · Lounge</small></div></section>
-      <section className="admin-login-form"><form onSubmit={submit}><p className="eyebrow">Staff only</p><h2>Welcome back</h2><p>Sign in to manage menus, images, promotions and business information.</p>{error && <div className="admin-alert error">{error}</div>}<label><span>Email</span><input name="email" type="email" required autoComplete="username" /></label><label><span>Password</span><input name="password" type="password" required minLength={8} autoComplete="current-password" /></label><button disabled={loading}>{loading ? 'Signing in…' : 'Sign in'}</button><a href="/">← Return to public site</a></form></section>
+      <section className="admin-login-brand"><div><img className="admin-login-logo" src="/brand-logo-maroon.webp" alt="De Big Tank" /><p>De Big Tank</p><h1>Everything guests see, managed in one place.</h1><small>Restaurant · Bakery · Lounge</small></div></section>
+      <section className="admin-login-form"><form onSubmit={submit}><p className="eyebrow">Staff only</p><h2>Welcome back</h2><p>Sign in to manage menus, images and business information.</p>{error && <div className="admin-alert error">{error}</div>}<label><span>Email</span><input name="email" type="email" required autoComplete="username" /></label><label><span>Password</span><input name="password" type="password" required minLength={8} autoComplete="current-password" /></label><button disabled={loading}>{loading ? 'Signing in…' : 'Sign in'}</button><a href="/">← Return to public site</a></form></section>
     </main>
   );
 }
@@ -167,7 +168,6 @@ function AdminOverview({ setTab }: { setTab: (tab: Tab) => void }) {
     ['products', 'Menu items', 'Manage dishes, drinks, bakery items, pricing and availability.'],
     ['categories', 'Categories', 'Organise every item across the three service lines.'],
     ['gallery', 'Gallery', 'Keep the public gallery fresh and relevant.'],
-    ['promotions', 'Promotions', 'Schedule and update current guest offers.'],
     ['settings', 'Site settings', 'Update contact details, hours and homepage content.'],
   ];
   return <div className="admin-overview"><div className="admin-welcome"><p className="eyebrow">Content control</p><h2>Keep the whole house current.</h2><p>Changes here flow directly to the public website. Orders and reservations remain in WhatsApp and are never stored here.</p></div><div className="admin-action-grid">{items.map(([tab, title, copy]) => <button key={tab} onClick={() => setTab(tab)}><span>Manage</span><strong>{title}</strong><p>{copy}</p><b>Open section →</b></button>)}</div></div>;
@@ -243,17 +243,6 @@ function GalleryManager({ records, editing, setEditing, mutate }: ManagerProps) 
   return <ManagerLayout title={editing ? 'Edit gallery image' : 'Add gallery image'} note="Upload an image through Cloudinary, or paste an existing hosted image URL." form={<form key={String(editing?.id ?? 'new')} onSubmit={submit} className="admin-form"><label className="wide"><span>Upload image</span><input type="file" accept="image/jpeg,image/png,image/webp,image/avif" onChange={(event) => void upload(event.target.files?.[0])} />{uploading && <small>Uploading…</small>}{uploadError && <small className="field-error">{uploadError}</small>}</label><label className="wide"><span>Image URL</span><input name="imageUrl" type="url" value={uploadedUrl} onChange={(event) => setUploadedUrl(event.target.value)} required /></label><AdminField name="altText" label="Accessible image description" defaultValue={editing?.altText} required /><AdminField name="caption" label="Caption" defaultValue={editing?.caption} /><AdminField name="sortOrder" label="Display order" type="number" min="0" defaultValue={editing?.sortOrder ?? 0} /><Check name="isActive" label="Visible in gallery" defaultChecked={editing ? Boolean(editing.isActive) : true} /><FormButtons editing={editing} cancel={() => setEditing(null)} /></form>} list={<div className="admin-gallery-list">{records.map((record) => <article key={String(record.id)}>{record.imageUrl ? <img src={String(record.imageUrl)} alt={String(record.altText ?? '')} /> : <div /> }<strong>{String(record.caption || record.altText)}</strong><RowActions edit={() => setEditing(record)} toggle={() => mutate(`/admin/gallery/${record.id}`, 'PATCH', { isActive: !record.isActive })} remove={() => confirmDelete(() => mutate(`/admin/gallery/${record.id}`, 'DELETE'))} active={Boolean(record.isActive)} /></article>)}</div>} />;
 }
 
-function PromotionManager({ records, editing, setEditing, mutate }: ManagerProps) {
-  const submit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const body = { title: form.get('title'), slug: form.get('slug'), description: form.get('description'), imageUrl: form.get('imageUrl') || undefined, startsAt: form.get('startsAt') ? new Date(String(form.get('startsAt'))).toISOString() : undefined, endsAt: form.get('endsAt') ? new Date(String(form.get('endsAt'))).toISOString() : undefined, isActive: form.get('isActive') === 'on' };
-    void mutate(editing ? `/admin/promotions/${editing.id}` : '/admin/promotions', editing ? 'PATCH' : 'POST', body);
-  };
-  const dateValue = (value: unknown) => typeof value === 'string' ? value.slice(0, 10) : '';
-  return <ManagerLayout title={editing ? 'Edit promotion' : 'Add promotion'} form={<form key={String(editing?.id ?? 'new')} onSubmit={submit} className="admin-form"><AdminField name="title" label="Title" defaultValue={editing?.title} required /><AdminField name="slug" label="Slug" defaultValue={editing?.slug} required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" /><label className="wide"><span>Description</span><textarea name="description" defaultValue={String(editing?.description ?? '')} required /></label><AdminField name="imageUrl" label="Image URL" type="url" defaultValue={editing?.imageUrl} /><AdminField name="startsAt" label="Starts" type="date" defaultValue={dateValue(editing?.startsAt)} /><AdminField name="endsAt" label="Ends" type="date" defaultValue={dateValue(editing?.endsAt)} /><Check name="isActive" label="Promotion active" defaultChecked={editing ? Boolean(editing.isActive) : true} /><FormButtons editing={editing} cancel={() => setEditing(null)} /></form>} list={<AdminTable headers={['Promotion', 'Starts', 'Ends', 'Status', 'Actions']} rows={records.map((record) => [String(record.title), dateValue(record.startsAt) || 'Immediately', dateValue(record.endsAt) || 'No end date', Boolean(record.isActive) ? 'Active' : 'Paused', <RowActions key={String(record.id)} edit={() => setEditing(record)} toggle={() => mutate(`/admin/promotions/${record.id}`, 'PATCH', { isActive: !record.isActive })} remove={() => confirmDelete(() => mutate(`/admin/promotions/${record.id}`, 'DELETE'))} active={Boolean(record.isActive)} />])} />} />;
-}
-
 function SettingsManager({ settings, mutate }: { settings: RecordValue | null; mutate: ManagerProps['mutate'] }) {
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -282,7 +271,11 @@ function FormButtons({ editing, cancel }: { editing: RecordValue | null; cancel:
   return <div className="admin-form-actions wide"><button type="submit">{editing ? 'Save changes' : 'Add new'}</button>{editing && <button type="button" className="secondary" onClick={cancel}>Cancel</button>}</div>;
 }
 function RowActions({ edit, toggle, remove, active }: { edit: () => void; toggle: () => void; remove: () => void; active: boolean }) {
-  return <div className="row-actions"><button onClick={edit}>Edit</button><button onClick={toggle}>{active ? 'Hide' : 'Show'}</button><button className="danger" onClick={remove}>Delete</button></div>;
+  const beginEdit = () => {
+    edit();
+    window.setTimeout(() => document.querySelector('.admin-form-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0);
+  };
+  return <div className="row-actions"><button type="button" className="edit" onClick={beginEdit}>Edit</button><button type="button" onClick={toggle}>{active ? 'Hide' : 'Show'}</button><button type="button" className="danger" onClick={remove}>Delete</button></div>;
 }
 function AdminTable({ headers, rows }: { headers: string[]; rows: React.ReactNode[][] }) {
   return <div className="admin-table-wrap"><table className="admin-table"><thead><tr>{headers.map((header) => <th key={header}>{header}</th>)}</tr></thead><tbody>{rows.map((row, index) => <tr key={index}>{row.map((cell, cellIndex) => <td key={cellIndex}>{cell}</td>)}</tr>)}</tbody></table></div>;

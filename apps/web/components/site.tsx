@@ -17,7 +17,7 @@ import {
   Variant,
 } from '../lib/content';
 
-export type PublicSlug = 'restaurant' | 'bakery' | 'lounge' | 'gallery' | 'about' | 'promotions' | 'contact' | 'reserve';
+export type PublicSlug = 'menu' | 'restaurant' | 'bakery' | 'lounge' | 'about' | 'contact' | 'reserve';
 type CartItem = {
   key: string;
   productId: string;
@@ -39,13 +39,14 @@ type Content = {
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 const nav = [
   ['Home', '/'],
-  ['Restaurant', '/restaurant'],
-  ['Bakery', '/bakery'],
-  ['Lounge', '/lounge'],
-  ['Gallery', '/gallery'],
-  ['Promotions', '/promotions'],
+  ['Menu', '/menu'],
   ['About', '/about'],
   ['Contact', '/contact'],
+] as const;
+const serviceNav = [
+  ['Restaurant', '/restaurant', 'Generous plates and local favourites'],
+  ['Bakery', '/bakery', 'Fresh bakes and celebration cakes'],
+  ['Lounge', '/lounge', 'Cocktails, shared plates and late nights'],
 ] as const;
 const defaultContent: Content = {
   products: fallbackProducts,
@@ -73,6 +74,16 @@ export default function Site({ slug }: { slug?: PublicSlug }) {
   const [cartOpen, setCartOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  useEffect(() => {
+    const savedTheme = window.localStorage.getItem('dbt-theme');
+    if (savedTheme === 'light' || savedTheme === 'dark') {
+      setTheme(savedTheme);
+      return;
+    }
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) setTheme('dark');
+  }, []);
 
   useEffect(() => {
     try {
@@ -113,7 +124,74 @@ export default function Site({ slug }: { slug?: PublicSlug }) {
 
   useEffect(() => {
     setMobileOpen(false);
+    document.querySelectorAll<HTMLDetailsElement>('.service-menu[open]').forEach((menu) => menu.removeAttribute('open'));
   }, [slug]);
+
+  useEffect(() => {
+    const overlayOpen = mobileOpen || cartOpen || checkoutOpen;
+    const previousOverflow = document.body.style.overflow;
+    if (overlayOpen) document.body.style.overflow = 'hidden';
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      setMobileOpen(false);
+      setCartOpen(false);
+      setCheckoutOpen(false);
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [mobileOpen, cartOpen, checkoutOpen]);
+
+  useEffect(() => {
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const revealTargets = document.querySelectorAll<HTMLElement>([
+      '#main-content .hero-content > *',
+      '#main-content .section-intro',
+      '#main-content .section-heading-row',
+      '#main-content .service-card',
+      '#main-content .product-card',
+      '#main-content .story-image',
+      '#main-content .story-copy > *',
+      '#main-content .promo-image',
+      '#main-content .promo-copy > *',
+      '#main-content .gallery-strip img',
+      '#main-content .closing-cta > *',
+      '#main-content .menu-hero-copy > *',
+      '#main-content .catalog-tools',
+      '#main-content .shared-page-hero > *',
+      '#main-content .editorial-split > *',
+      '#main-content .values-row > div',
+      '#main-content .contact-page > section',
+      '#main-content .form-page > *',
+      '.site-footer .footer-main > div',
+    ].join(','));
+
+    revealTargets.forEach((element) => {
+      element.classList.add('scroll-reveal');
+      const siblings = element.parentElement ? Array.from(element.parentElement.children) : [];
+      const position = Math.max(0, siblings.indexOf(element));
+      element.style.setProperty('--reveal-delay', `${Math.min(position % 4, 3) * 80}ms`);
+    });
+
+    if (reduceMotion || !('IntersectionObserver' in window)) {
+      revealTargets.forEach((element) => element.classList.add('is-visible'));
+      return;
+    }
+
+    document.documentElement.classList.add('motion-ready');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target);
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -7% 0px' });
+
+    revealTargets.forEach((element) => observer.observe(element));
+    return () => observer.disconnect();
+  }, [slug, content.products, content.gallery, content.promotions]);
 
   const addToCart = (product: Product, variant?: Variant) => {
     const selectedVariant = variant ? {
@@ -145,42 +223,61 @@ export default function Site({ slug }: { slug?: PublicSlug }) {
   const activeLine = lineFromSlug(slug);
 
   return (
-    <div className="site-shell">
+    <div className="site-shell" data-theme={theme}>
       <a href="#main-content" className="skip-link">Skip to content</a>
       <header className="site-header">
         <div className="header-inner">
           <Link href="/" className="brand" aria-label="De Big Tank home">
-            <img className="brand-logo" src="/brand-logo.jpeg" alt="" />
+            <img className="brand-logo" src={theme === 'light' ? '/brand-logo-maroon.webp' : '/brand-logo-transparent.webp'} alt="" />
             <span>
               <strong>De Big Tank</strong>
               <small>Restaurant · Bakery · Lounge</small>
             </span>
           </Link>
           <nav className="desktop-nav" aria-label="Main navigation">
+            <Link href="/">Home</Link>
+            <details className={`service-menu ${activeLine ? 'active' : ''}`}>
+              <summary>Services <span className="service-chevron" aria-hidden="true"><svg viewBox="0 0 12 8" focusable="false"><path d="m1 1.5 5 5 5-5" /></svg></span></summary>
+              <div className="service-dropdown">
+                <p>Choose an experience</p>
+                {serviceNav.map(([label, href, copy]) => <Link key={href} href={href} onClick={(event) => event.currentTarget.closest('details')?.removeAttribute('open')}><strong>{label}</strong><small>{copy}</small></Link>)}
+              </div>
+            </details>
             {nav.slice(1).map(([label, href]) => <Link key={href} href={href}>{label}</Link>)}
           </nav>
           <div className="header-actions">
-            <Link href="/reserve" className="header-reserve">Reserve</Link>
-            <button type="button" onClick={() => setCartOpen(true)} className="cart-button" aria-label={`Open cart with ${cartCount} items`}>
-              Bag <span>{cartCount}</span>
+            <button type="button" className="theme-toggle" onClick={() => setTheme((current) => { const next = current === 'light' ? 'dark' : 'light'; window.localStorage.setItem('dbt-theme', next); return next; })} aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`} title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}>
+              <span aria-hidden="true">{theme === 'light' ? 'Moon' : 'Sun'}</span>
             </button>
-            <button type="button" className="menu-button" aria-label="Toggle menu" aria-expanded={mobileOpen} onClick={() => setMobileOpen((open) => !open)}>
+            <Link href="/reserve" className="header-reserve">Reserve</Link>
+            <button type="button" onClick={() => setCartOpen(true)} className="cart-button" aria-label={`Open cart with ${cartCount} items`} title="Open cart">
+              <span className="bag-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M6.5 8.5h11l1 12h-13l1-12Z"/><path d="M9 9V6.5a3 3 0 0 1 6 0V9"/></svg></span>
+              <span className="bag-count">{cartCount}</span>
+            </button>
+            <button type="button" className="menu-button" aria-label={mobileOpen ? 'Close menu' : 'Open menu'} aria-expanded={mobileOpen} aria-controls="mobile-navigation" onClick={() => setMobileOpen((open) => !open)}>
               <span /><span /><span />
             </button>
           </div>
         </div>
         {mobileOpen && (
-          <nav className="mobile-nav" aria-label="Mobile navigation">
-            {nav.map(([label, href]) => <Link key={href} href={href}>{label}</Link>)}
-            <Link href="/reserve" className="mobile-reserve">Reserve a table</Link>
+          <nav id="mobile-navigation" className="mobile-nav" aria-label="Mobile navigation">
+            <div className="mobile-nav-heading"><span>Explore De Big Tank</span><small>Restaurant · Bakery · Lounge</small></div>
+            <Link href="/" onClick={() => setMobileOpen(false)}><small>01</small><span>Home</span></Link>
+            <details className="service-menu mobile-service-menu">
+              <summary><small>02</small><span>Services</span><b aria-hidden="true">+</b></summary>
+              <div className="service-dropdown">
+                {serviceNav.map(([label, href, copy]) => <Link key={href} href={href} onClick={() => setMobileOpen(false)}><strong>{label}</strong><small>{copy}</small></Link>)}
+              </div>
+            </details>
+            {nav.slice(1).map(([label, href], index) => <Link key={href} href={href} onClick={() => setMobileOpen(false)}><small>{String(index + 3).padStart(2, '0')}</small><span>{label}</span></Link>)}
+            <Link href="/reserve" className="mobile-reserve" onClick={() => setMobileOpen(false)}>Reserve a table</Link>
           </nav>
         )}
       </header>
 
       <main id="main-content">
-        {slug === 'gallery' ? <Gallery images={content.gallery} /> :
+        {slug === 'menu' ? <AllProducts products={content.products} add={addToCart} /> :
           slug === 'about' ? <About /> :
-          slug === 'promotions' ? <Promotions promotions={content.promotions} /> :
           slug === 'contact' ? <Contact settings={content.settings} /> :
           slug === 'reserve' ? <Reservation settings={content.settings} /> :
           activeLine ? <Catalog line={activeLine} products={content.products} categories={content.categories} add={addToCart} /> :
@@ -203,48 +300,49 @@ export default function Site({ slug }: { slug?: PublicSlug }) {
 
 function Home({ content, add }: { content: Content; add: (product: Product, variant?: Variant) => void }) {
   const services = [
-    { title: 'Restaurant', eyebrow: 'At the table', description: 'Generous Nigerian favourites, grills and plates built for sharing.', href: '/restaurant', image: fallbackProducts[0].imageUrl! },
-    { title: 'Bakery', eyebrow: 'From the oven', description: 'Fresh pastries and celebration cakes made with a personal touch.', href: '/bakery', image: fallbackProducts[2].imageUrl! },
-    { title: 'Lounge', eyebrow: 'After hours', description: 'Cocktails, shared plates and a room that settles into the evening.', href: '/lounge', image: fallbackProducts[4].imageUrl! },
+    { number: '01', title: 'Restaurant', eyebrow: 'Eat generously', description: 'Nigerian favourites, fire-kissed grills and abundant plates made for the whole table.', href: '/restaurant', image: fallbackProducts[0].imageUrl!, action: 'See the food menu' },
+    { number: '02', title: 'Bakery', eyebrow: 'Made fresh daily', description: 'Buttery pastries, beautiful cakes and small sweet things worth making a stop for.', href: '/bakery', image: '/brand-poster.jpeg', action: 'Visit the bakery' },
+    { number: '03', title: 'Lounge', eyebrow: 'Stay after dark', description: 'Considered cocktails, shared plates and the right soundtrack for unhurried evenings.', href: '/lounge', image: '/lounge-interior.jpeg', action: 'Enter the lounge' },
   ];
   return (
     <>
       <section className="hero">
+        <div className="hero-food-stack hero-food-stack-left" aria-hidden="true">
+          <span className="hero-food-card hero-food-card-a"><img src={fallbackProducts[0].imageUrl!} alt="" /><b>Smoky<br />Jollof</b></span>
+          <span className="hero-food-card hero-food-card-b"><img src="/brand-poster.jpeg" alt="" /><b>Celebration<br />Cake</b></span>
+        </div>
         <div className="hero-content">
-          <p className="eyebrow">Restaurant · Bakery · Lounge</p>
-          <h1>A little luxury.<br /><em>A lot of flavour.</em></h1>
-          <p className="hero-copy">Bold Nigerian favourites, oven-fresh bakes and slow lounge evenings—all beautifully made, all under one roof.</p>
+          <p className="eyebrow">Warri, Delta State / Open daily</p>
+          <h1>One house.<br /><em>Three moods.</em></h1>
+          <p className="hero-copy">A restaurant, bakery and lounge for every version of your day—from the first craving to the last round.</p>
           <div className="hero-actions">
-            <Link href="/restaurant" className="button primary">Order now</Link>
-            <Link href="/reserve" className="button outline-dark">Reserve a table</Link>
+            <Link href="#three-ways" className="button primary">Choose your mood <span aria-hidden="true">↘</span></Link>
+            <Link href="/reserve" className="button outline-dark">Book a table</Link>
           </div>
         </div>
-        <div className="hero-visual">
-          <img src={fallbackProducts[0].imageUrl!} alt="A vibrant plate from the De Big Tank kitchen" />
-          <span className="hero-stamp">Made fresh<br />served beautifully</span>
+        <div className="hero-food-stack hero-food-stack-right" aria-hidden="true">
+          <span className="hero-food-card hero-food-card-c"><img src={fallbackProducts[4].imageUrl!} alt="" /><b>Passionfruit<br />Mojito</b></span>
+          <span className="hero-food-card hero-food-card-d"><img src={fallbackProducts[1].imageUrl!} alt="" /><b>Beef Suya<br />Platter</b></span>
         </div>
-        <span className="doodle doodle-croissant" aria-hidden="true">🥐</span>
+        <span className="hero-stamp">Good food<br />good people<br />good times</span>
+        <span className="hero-index" aria-hidden="true">EST. / LAGOS</span>
       </section>
 
-      <section className="marquee" aria-label="De Big Tank offerings">
-        <span>good food</span><b>✦</b><span>fresh bakes</span><b>✦</b><span>fine evenings</span><b>✦</b><span>beautiful moments</span>
-      </section>
-
-      <section className="service-gateways" aria-labelledby="service-heading">
+      <section className="service-gateways" id="three-ways" aria-labelledby="service-heading">
         <div className="section-intro align-left">
-          <p className="eyebrow">Whatever you came for</p>
-          <h2 id="service-heading">There’s always something<br /><em>worth staying for.</em></h2>
+          <p className="eyebrow">De Big Tank / Three ways in</p>
+          <div className="service-intro-row">
+            <h2 id="service-heading">Pick your<br /><em>kind of good.</em></h2>
+            <p>Three distinct experiences. One unmistakably warm welcome. Start wherever the day finds you.</p>
+          </div>
         </div>
         <div className="service-grid">
           {services.map((service) => (
             <Link href={service.href} className="service-card" key={service.title}>
-              <img src={service.image} alt="" />
-              <span className="service-overlay">
-                <small>{service.eyebrow}</small>
-                <strong>{service.title}</strong>
-                <span>{service.description}</span>
-                <b>Explore {service.title} <span aria-hidden="true">→</span></b>
-              </span>
+              <span className="service-card-top"><small>{service.number} / 03</small><small>{service.eyebrow}</small></span>
+              <span className="service-card-image"><img src={service.image} alt="" /></span>
+              <span className="service-card-copy"><strong>{service.title}</strong><span>{service.description}</span></span>
+              <b>{service.action} <span aria-hidden="true">↗</span></b>
             </Link>
           ))}
         </div>
@@ -279,7 +377,6 @@ function Home({ content, add }: { content: Content; add: (product: Product, vari
       <section className="gallery-preview">
         <div className="section-heading-row">
           <div><p className="eyebrow">Inside De Big Tank</p><h2>A taste of the room</h2></div>
-          <Link href="/gallery" className="text-link">View the gallery <span aria-hidden="true">→</span></Link>
         </div>
         <div className="gallery-strip">
           {content.gallery.slice(0, 4).map((item) => <img key={item.id} src={item.imageUrl} alt={item.altText} />)}
@@ -296,6 +393,30 @@ function Home({ content, add }: { content: Content; add: (product: Product, vari
   );
 }
 
+function AllProducts({ products, add }: { products: Product[]; add: (product: Product, variant?: Variant) => void }) {
+  const groups: { line: Line; title: string; copy: string }[] = [
+    { line: 'RESTAURANT', title: 'Restaurant menu', copy: 'Nigerian dishes, grills and generous plates prepared in Warri.' },
+    { line: 'BAKERY', title: 'Bakery menu', copy: 'Pastries and celebration cakes baked for everyday treats and special occasions.' },
+    { line: 'LOUNGE', title: 'Lounge menu', copy: 'Cocktails, zero-proof drinks and shared plates for relaxed evenings.' },
+  ];
+  return <div className="page-wrap all-products-page">
+    <section className="all-menu-hero">
+      <img src="/menu-hero-v1.webp" alt="A table of Nigerian dishes, fresh bakes, cake and cocktails inside the De Big Tank lounge" />
+      <div className="all-menu-hero-content">
+        <PageHeader eyebrow="All menus / De Big Tank" title="The full menu." copy="Restaurant favourites, fresh bakery treats and lounge selections—brought together in one easy place." />
+      </div>
+    </section>
+    <nav className="menu-section-jump" aria-label="Menu sections">{groups.map((group) => <a key={group.line} href={`#products-${group.line.toLowerCase()}`}>{group.title}</a>)}</nav>
+    {groups.map((group, index) => {
+      const items = products.filter((product) => product.category.serviceLine === group.line);
+      return <section className="all-products-group" key={group.line} aria-labelledby={`products-${group.line.toLowerCase()}`}>
+        <div className="section-heading-row"><div><p className="eyebrow">{String(index + 1).padStart(2, '0')} / {group.line.toLowerCase()}</p><h2 id={`products-${group.line.toLowerCase()}`}>{group.title}</h2></div><p>{group.copy}</p></div>
+        {items.length ? <div className="product-grid">{items.map((product) => <ProductTile key={product.id} product={product} add={add} />)}</div> : <p>No products are currently listed in this section.</p>}
+      </section>;
+    })}
+  </div>;
+}
+
 function Catalog({ line, products, categories, add }: { line: Line; products: Product[]; categories: Category[]; add: (product: Product, variant?: Variant) => void }) {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('all');
@@ -306,14 +427,47 @@ function Catalog({ line, products, categories, add }: { line: Line; products: Pr
     product.name.toLowerCase().includes(query.toLowerCase()),
   ), [products, line, category, query]);
   const lineCategories = categories.filter((item) => item.serviceLine === line);
+  const hero = line === 'BAKERY' ? {
+    kicker: 'Baked in Warri · Fresh every day',
+    title: 'Warm from the oven. Made to share.',
+    copy: 'Soft loaves, celebration cakes and buttery favourites, baked fresh for the moments that deserve something special.',
+    image: '/bakery-hero-overlay.webp',
+    alt: 'An abundant display of freshly baked breads and pastries',
+    notes: ['Fresh daily', 'Custom cakes', 'Pickup available'],
+  } : line === 'LOUNGE' ? {
+    kicker: 'After dark at De Big Tank',
+    title: 'Good drinks. Better evenings.',
+    copy: 'Signature cocktails, chilled bottles and generous shared plates for nights that should never feel rushed.',
+    image: '/lounge-interior.jpeg',
+    alt: 'The warm and inviting De Big Tank lounge interior',
+    notes: ['Signature cocktails', 'Shared plates', 'Open late'],
+  } : {
+    kicker: 'Nigerian flavour · Generously served',
+    title: 'Tradition on every plate.',
+    copy: 'Fire-kissed grills, rich local favourites and abundant plates prepared for gathering around the table.',
+    image: '/restaurant-hero-overlay.webp',
+    alt: 'The warmly lit De Big Tank restaurant dining room',
+    notes: ['Made to order', 'Local favourites', 'Family portions'],
+  };
   return (
     <div className="page-wrap">
-      <PageHeader
-        eyebrow={`De Big Tank ${title}`}
-        title={line === 'LOUNGE' ? 'Good drinks. Better evenings.' : line === 'BAKERY' ? 'Fresh from our ovens.' : 'The table starts here.'}
-        copy={line === 'LOUNGE' ? 'Cocktails, bottles and shared plates for unhurried nights.' : `Browse the ${title.toLowerCase()} menu, choose your favourites and send your order on WhatsApp.`}
-      />
-      <div className="catalog-tools">
+      <section className={`menu-hero menu-hero-${line.toLowerCase()}`}>
+        <img className="menu-hero-background" src={hero.image} alt={hero.alt} />
+        <div className="menu-hero-copy">
+          <p className="eyebrow">{hero.kicker}</p>
+          <h1>{hero.title}</h1>
+          <p className="menu-hero-lead">{hero.copy}</p>
+          <div className="menu-hero-actions">
+            <a href="#menu-list" className="button primary">Explore our Menu</a>
+            <Link href="/reserve" className="button menu-hero-secondary">Book a table</Link>
+          </div>
+          <div className="menu-hero-notes" aria-label={`${title} highlights`}>
+            {hero.notes.map((note) => <span key={note}>{note}</span>)}
+          </div>
+        </div>
+        <span className="menu-hero-seal">De Big Tank<br />{title}</span>
+      </section>
+      <div className="catalog-tools" id="menu-list">
         <label className="search-field">
           <span className="sr-only">Search the menu</span>
           <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search this menu" />
@@ -359,7 +513,8 @@ function ProductTile({ product, add }: { product: Product; add: (product: Produc
         <div className="product-footer">
           <strong>{naira(displayedPrice)}</strong>
           <button type="button" disabled={!canAdd} onClick={() => add(product, variant)}>
-            {product.isAvailable ? 'Add to bag' : 'Unavailable'}
+            <span className="add-label">{product.isAvailable ? 'Add to bag' : 'Unavailable'}</span>
+            <span className="add-icon" aria-hidden="true">{product.isAvailable ? '+' : '×'}</span>
           </button>
         </div>
       </div>
@@ -367,61 +522,32 @@ function ProductTile({ product, add }: { product: Product; add: (product: Produc
   );
 }
 
-function Gallery({ images }: { images: GalleryImage[] }) {
-  const [selected, setSelected] = useState<GalleryImage | null>(null);
-  return (
-    <div className="page-wrap">
-      <PageHeader eyebrow="Gallery" title="The room, the table, the moment." copy="A glimpse of what we make and the atmosphere we make it in." />
-      <div className="gallery-grid">
-        {images.map((item, index) => (
-          <button type="button" key={item.id} className={index % 5 === 0 ? 'gallery-tall' : ''} onClick={() => setSelected(item)}>
-            <img src={item.imageUrl} alt={item.altText} />
-            {item.caption && <span>{item.caption}</span>}
-          </button>
-        ))}
-      </div>
-      {selected && (
-        <div className="lightbox" role="dialog" aria-modal="true" aria-label={selected.altText} onClick={() => setSelected(null)}>
-          <button type="button" aria-label="Close image" onClick={() => setSelected(null)}>Close</button>
-          <figure onClick={(event) => event.stopPropagation()}>
-            <img src={selected.imageUrl} alt={selected.altText} />
-            {selected.caption && <figcaption>{selected.caption}</figcaption>}
-          </figure>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function Promotions({ promotions }: { promotions: Promotion[] }) {
-  return (
-    <div className="page-wrap">
-      <PageHeader eyebrow="Promotions" title="More reasons to gather." copy="Current offers and special moments from across the restaurant, bakery and lounge." />
-      <div className="promotion-grid">
-        {promotions.map((promotion) => (
-          <article key={promotion.id} className="promotion-card">
-            {promotion.imageUrl && <img src={promotion.imageUrl} alt="" />}
-            <div><p className="eyebrow">Current special</p><h2>{promotion.title}</h2><p>{promotion.description}</p></div>
-          </article>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function PromoFeature({ promotion }: { promotion: Promotion }) {
   return (
     <section className="promo-feature">
       <div className="promo-image">{promotion.imageUrl && <img src={promotion.imageUrl} alt="" />}</div>
-      <div className="promo-copy"><p className="eyebrow gold">Now at De Big Tank</p><h2>{promotion.title}</h2><p>{promotion.description}</p><Link href="/promotions" className="button outline-light">See current specials</Link></div>
+      <div className="promo-copy"><p className="eyebrow gold">Now at De Big Tank</p><h2>{promotion.title}</h2><p>{promotion.description}</p><Link href="/contact" className="button outline-light">Ask about this offer</Link></div>
+    </section>
+  );
+}
+
+function SharedPageHero({ eyebrow, title, copy }: { eyebrow: string; title: string; copy: string }) {
+  return (
+    <section className="shared-page-hero">
+      <img src="/shared-brand-hero.webp" alt="De Big Tank lounge and hospitality setting" />
+      <div>
+        <p className="eyebrow">{eyebrow}</p>
+        <h1>{title}</h1>
+        <p>{copy}</p>
+      </div>
     </section>
   );
 }
 
 function About() {
   return (
-    <div className="editorial-page">
-      <PageHeader eyebrow="Our story" title="One house. Three reasons to stay." copy="De Big Tank brings generous dining, warm baking and effortless lounge evenings together under one roof." />
+    <div className="editorial-page shared-hero-page">
+      <SharedPageHero eyebrow="Our story" title="One house. Three reasons to stay." copy="De Big Tank brings generous dining, warm baking and effortless lounge evenings together under one roof." />
       <section className="editorial-split">
         <img src={fallbackProducts[0].imageUrl!} alt="A colourful meal prepared at De Big Tank" />
         <div><p className="eyebrow">Our table</p><h2>Hospitality without the fuss.</h2><p>We built De Big Tank around the way people actually gather: a quick meal can become a long conversation, a cake can carry a whole celebration, and the right room can change the pace of an evening.</p><p>Our approach is direct—cook generously, bake fresh, pour thoughtfully and make every guest feel expected.</p></div>
@@ -589,7 +715,13 @@ function Footer({ settings }: { settings: SiteSettings }) {
   return (
     <footer className="site-footer">
       <div className="footer-main">
-        <div><span className="footer-brand">De Big Tank</span><p>{settings.tagline}</p></div>
+        <div>
+          <Link href="/" className="footer-logo-lockup" aria-label="De Big Tank home">
+            <img src="/brand-logo-transparent.webp" alt="" />
+            <span className="footer-brand">De Big Tank</span>
+          </Link>
+          <p>{settings.tagline}</p>
+        </div>
         <div><h3>Explore</h3>{nav.slice(1, 5).map(([label, href]) => <Link key={href} href={href}>{label}</Link>)}</div>
         <div><h3>Visit</h3><p>{settings.address}</p><a href={`tel:${settings.phone}`}>{settings.phone}</a></div>
         <div><h3>Talk to us</h3><a href={`https://wa.me/${settings.whatsappNumber}`} target="_blank" rel="noreferrer">WhatsApp</a>{settings.email && <a href={`mailto:${settings.email}`}>{settings.email}</a>}{socialLinks.map(([name, href]) => <a key={name} href={href} target="_blank" rel="noreferrer">{name}</a>)}</div>
