@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import type {} from 'react/canary';
+import { FormEvent, ViewTransition, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Category,
   fallbackCategories,
@@ -307,7 +308,8 @@ export default function Site({ slug }: { slug?: PublicSlug }) {
           </nav>
         )}
 
-      <main id="main-content" inert={mobileOpen}>
+      <ViewTransition name="page-content" share="page-crossfade" enter="page-crossfade" exit="page-crossfade" default="none">
+      <main id="main-content" key={slug ?? 'home'} inert={mobileOpen}>
         {slug === 'menu' ? <AllProducts products={content.products} add={addToCart} /> :
           slug === 'about' ? <About /> :
           slug === 'contact' ? <Contact settings={content.settings} /> :
@@ -315,6 +317,7 @@ export default function Site({ slug }: { slug?: PublicSlug }) {
           activeLine ? <Catalog line={activeLine} products={content.products} categories={content.categories} add={addToCart} /> :
           <Home content={content} add={addToCart} />}
       </main>
+      </ViewTransition>
 
       <div inert={mobileOpen}><Footer settings={content.settings} /></div>
       {cartOpen && (

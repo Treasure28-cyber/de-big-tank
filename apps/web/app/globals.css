@@ -2197,3 +2197,40 @@ html, body { max-width: 100%; overflow-x: clip; }
   .site-shell .service-card-copy { grid-column: 2; grid-row: 2; }
   .site-shell .service-card > b { grid-column: 2; grid-row: 3; }
 }
+
+/* Shared menu surfaces across themes, including the full-menu section links. */
+.site-shell { --menu-surface: #fffdf9; --menu-text: #810d12; --menu-border: rgba(129,13,18,.2); }
+.site-shell[data-theme="dark"] { --menu-surface: #171719; --menu-text: #f2d28c; --menu-border: rgba(242,210,140,.25); }
+.site-shell .menu-section-jump { position: sticky; z-index: 20; top: var(--header-height); width: 100%; margin: 0 0 1.5rem; border-block: 1px solid var(--menu-border); background: var(--menu-surface); padding: .75rem max(1rem,calc((100% - 1320px)/2)); }
+.site-shell .page-wrap.all-products-page { width: 100%; margin-inline: 0; }
+.site-shell .menu-section-jump a { min-height: 44px; display: inline-flex; align-items: center; border-color: var(--menu-border); background: transparent; color: var(--menu-text); }
+.site-shell .menu-section-jump a:hover,.site-shell .menu-section-jump a:focus-visible { border-color: #b31217; background: #b31217; color: white; }
+.site-shell .catalog-tools { background: var(--menu-surface); }
+.site-shell .category-tabs button:not(.active) { border-color: var(--menu-border); background: var(--menu-surface); color: var(--menu-text); }
+.site-shell .cart-button::before { display: none !important; content: none !important; }
+
+/* Edge-to-edge phone landscape, with safe spacing for camera and home indicator. */
+@media (orientation: landscape) and (max-height: 600px) and (max-width: 1100px) {
+  .site-shell { --header-height: 64px; width: 100%; }
+  .site-shell .header-inner { width: 100% !important; padding-inline: max(1rem,env(safe-area-inset-left)) max(1rem,env(safe-area-inset-right)); }
+  .site-shell .brand > span { display: none; }
+  .site-shell .hero { min-height: max(460px,calc(100svh - 64px)) !important; }
+  .site-shell .hero-content { width: 100%; padding: 2.5rem max(1.5rem,env(safe-area-inset-right)) 2.5rem max(1.5rem,env(safe-area-inset-left)) !important; }
+  .site-shell .hero h1 { font-size: clamp(3.3rem,7vw,5rem) !important; }
+  .site-shell .hero .eyebrow { margin-bottom: 1rem; }
+  .hero-experiences { margin-top: 1.25rem; }
+  .site-shell .mobile-nav { padding-inline: max(1.25rem,env(safe-area-inset-left)) max(1.25rem,env(safe-area-inset-right)); }
+  .site-shell .menu-section-jump { padding-inline: max(1rem,env(safe-area-inset-left)) max(1rem,env(safe-area-inset-right)); }
+}
+
+/* Native route crossfade; unsupported browsers retain a gentle entrance. */
+::view-transition-old(page-content),::view-transition-new(page-content) { animation-duration: 450ms; animation-timing-function: ease-in-out; }
+::view-transition-group(page-content) { animation-duration: 450ms; }
+@keyframes page-arrive { from { opacity: 0; } to { opacity: 1; } }
+@supports not (view-transition-name: page-content) {
+  .site-shell #main-content { animation: page-arrive 350ms ease-out; }
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(page-content),::view-transition-new(page-content),::view-transition-group(page-content) { animation-duration: 0s !important; }
+  .site-shell #main-content { animation: none; }
+}
