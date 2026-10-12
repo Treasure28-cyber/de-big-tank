@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Category,
   fallbackCategories,
@@ -75,6 +75,8 @@ export default function Site({ slug }: { slug?: PublicSlug }) {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const mobileNavRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const savedTheme = window.localStorage.getItem('dbt-theme');
@@ -82,8 +84,31 @@ export default function Site({ slug }: { slug?: PublicSlug }) {
       setTheme(savedTheme);
       return;
     }
-    if (window.matchMedia('(prefers-color-scheme: dark)').matches) setTheme('dark');
   }, []);
+
+  const toggleTheme = () => setTheme((current) => {
+    const next = current === 'light' ? 'dark' : 'light';
+    window.localStorage.setItem('dbt-theme', next);
+    return next;
+  });
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    mobileNavRef.current?.querySelector<HTMLAnchorElement>('a')?.focus();
+    const keepFocus = (event: KeyboardEvent) => {
+      if (event.key !== 'Tab') return;
+      const controls = [menuButtonRef.current, ...Array.from(mobileNavRef.current?.querySelectorAll<HTMLElement>('a, button, summary') ?? [])].filter((element): element is HTMLElement => Boolean(element && element.getClientRects().length));
+      const first = controls[0];
+      const last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    };
+    document.addEventListener('keydown', keepFocus);
+    return () => {
+      document.removeEventListener('keydown', keepFocus);
+      menuButtonRef.current?.focus();
+    };
+  }, [mobileOpen]);
 
   useEffect(() => {
     try {
@@ -128,6 +153,13 @@ export default function Site({ slug }: { slug?: PublicSlug }) {
   }, [slug]);
 
   useEffect(() => {
+    const desktop = window.matchMedia('(min-width: 1101px)');
+    const closeOnDesktop = () => { if (desktop.matches) setMobileOpen(false); };
+    desktop.addEventListener('change', closeOnDesktop);
+    return () => desktop.removeEventListener('change', closeOnDesktop);
+  }, []);
+
+  useEffect(() => {
     const overlayOpen = mobileOpen || cartOpen || checkoutOpen;
     const previousOverflow = document.body.style.overflow;
     if (overlayOpen) document.body.style.overflow = 'hidden';
@@ -159,7 +191,6 @@ export default function Site({ slug }: { slug?: PublicSlug }) {
       '#main-content .gallery-strip img',
       '#main-content .closing-cta > *',
       '#main-content .menu-hero-copy > *',
-      '#main-content .catalog-tools',
       '#main-content .shared-page-hero > *',
       '#main-content .editorial-split > *',
       '#main-content .values-row > div',
@@ -246,21 +277,22 @@ export default function Site({ slug }: { slug?: PublicSlug }) {
             {nav.slice(1).map(([label, href]) => <Link key={href} href={href}>{label}</Link>)}
           </nav>
           <div className="header-actions">
-            <button type="button" className="theme-toggle" onClick={() => setTheme((current) => { const next = current === 'light' ? 'dark' : 'light'; window.localStorage.setItem('dbt-theme', next); return next; })} aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`} title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}>
-              <span aria-hidden="true">{theme === 'light' ? 'Moon' : 'Sun'}</span>
+            <button type="button" className="theme-toggle" onClick={toggleTheme} aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`} title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{theme === 'light' ? <path d="M20.5 13A8.5 8.5 0 0 1 11 3.5 8.5 8.5 0 1 0 20.5 13Z" /> : <><circle cx="12" cy="12" r="4" /><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5" /></>}</svg>
             </button>
             <Link href="/reserve" className="header-reserve">Reserve</Link>
             <button type="button" onClick={() => setCartOpen(true)} className="cart-button" aria-label={`Open cart with ${cartCount} items`} title="Open cart">
               <span className="bag-icon" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path d="M6.5 8.5h11l1 12h-13l1-12Z"/><path d="M9 9V6.5a3 3 0 0 1 6 0V9"/></svg></span>
               <span className="bag-count">{cartCount}</span>
             </button>
-            <button type="button" className="menu-button" aria-label={mobileOpen ? 'Close menu' : 'Open menu'} aria-expanded={mobileOpen} aria-controls="mobile-navigation" onClick={() => setMobileOpen((open) => !open)}>
-              <span /><span /><span />
+            <button ref={menuButtonRef} type="button" className="menu-button" aria-label={mobileOpen ? 'Close menu' : 'Open menu'} aria-expanded={mobileOpen} aria-controls="mobile-navigation" onClick={() => setMobileOpen((open) => !open)}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" aria-hidden="true"><path d={mobileOpen ? 'm6 6 12 12M6 18 18 6' : 'M4 6h16M4 12h16M4 18h16'} /></svg>
             </button>
           </div>
         </div>
+      </header>
         {mobileOpen && (
-          <nav id="mobile-navigation" className="mobile-nav" aria-label="Mobile navigation">
+          <nav ref={mobileNavRef} id="mobile-navigation" className="mobile-nav" aria-label="Mobile navigation">
             <div className="mobile-nav-heading"><span>Explore De Big Tank</span><small>Restaurant · Bakery · Lounge</small></div>
             <Link href="/" onClick={() => setMobileOpen(false)}><small>01</small><span>Home</span></Link>
             <details className="service-menu mobile-service-menu">
@@ -271,11 +303,11 @@ export default function Site({ slug }: { slug?: PublicSlug }) {
             </details>
             {nav.slice(1).map(([label, href], index) => <Link key={href} href={href} onClick={() => setMobileOpen(false)}><small>{String(index + 3).padStart(2, '0')}</small><span>{label}</span></Link>)}
             <Link href="/reserve" className="mobile-reserve" onClick={() => setMobileOpen(false)}>Reserve a table</Link>
+            <button type="button" className="mobile-theme-choice" onClick={toggleTheme}><span>Appearance</span><strong>{theme === 'light' ? 'Light' : 'Dark'} mode <span aria-hidden="true">↔</span></strong><small>Switch to {theme === 'light' ? 'dark' : 'light'}</small></button>
           </nav>
         )}
-      </header>
 
-      <main id="main-content">
+      <main id="main-content" inert={mobileOpen}>
         {slug === 'menu' ? <AllProducts products={content.products} add={addToCart} /> :
           slug === 'about' ? <About /> :
           slug === 'contact' ? <Contact settings={content.settings} /> :
@@ -284,7 +316,7 @@ export default function Site({ slug }: { slug?: PublicSlug }) {
           <Home content={content} add={addToCart} />}
       </main>
 
-      <Footer settings={content.settings} />
+      <div inert={mobileOpen}><Footer settings={content.settings} /></div>
       {cartOpen && (
         <Cart
           items={cart}
@@ -300,32 +332,27 @@ export default function Site({ slug }: { slug?: PublicSlug }) {
 
 function Home({ content, add }: { content: Content; add: (product: Product, variant?: Variant) => void }) {
   const services = [
-    { number: '01', title: 'Restaurant', eyebrow: 'Eat generously', description: 'Nigerian favourites, fire-kissed grills and abundant plates made for the whole table.', href: '/restaurant', image: fallbackProducts[0].imageUrl!, action: 'See the food menu' },
-    { number: '02', title: 'Bakery', eyebrow: 'Made fresh daily', description: 'Buttery pastries, beautiful cakes and small sweet things worth making a stop for.', href: '/bakery', image: '/brand-poster.jpeg', action: 'Visit the bakery' },
+    { number: '01', title: 'Restaurant', eyebrow: 'Eat generously', description: 'Nigerian favourites, fire-kissed grills and abundant plates made for the whole table.', href: '/restaurant', image: '/restaurant-hero-overlay.webp', action: 'See the food menu' },
+    { number: '02', title: 'Bakery', eyebrow: 'Made fresh daily', description: 'Buttery pastries, beautiful cakes and small sweet things worth making a stop for.', href: '/bakery', image: '/bakery-hero-overlay.webp', action: 'Visit the bakery' },
     { number: '03', title: 'Lounge', eyebrow: 'Stay after dark', description: 'Considered cocktails, shared plates and the right soundtrack for unhurried evenings.', href: '/lounge', image: '/lounge-interior.jpeg', action: 'Enter the lounge' },
   ];
   return (
     <>
       <section className="hero">
-        <div className="hero-food-stack hero-food-stack-left" aria-hidden="true">
-          <span className="hero-food-card hero-food-card-a"><img src={fallbackProducts[0].imageUrl!} alt="" /><b>Smoky<br />Jollof</b></span>
-          <span className="hero-food-card hero-food-card-b"><img src="/brand-poster.jpeg" alt="" /><b>Celebration<br />Cake</b></span>
-        </div>
+        <img className="home-hero-image" src="/menu-hero-v1.webp" alt="Jollof rice, grilled suya, fresh pastries and cocktails in a warmly lit lounge" fetchPriority="high" />
         <div className="hero-content">
-          <p className="eyebrow">Warri, Delta State / Open daily</p>
+          <p className="eyebrow"><span className="hero-status-dot" /> Warri, Delta State / Open daily</p>
           <h1>One house.<br /><em>Three moods.</em></h1>
           <p className="hero-copy">A restaurant, bakery and lounge for every version of your day—from the first craving to the last round.</p>
           <div className="hero-actions">
             <Link href="#three-ways" className="button primary">Choose your mood <span aria-hidden="true">↘</span></Link>
             <Link href="/reserve" className="button outline-dark">Book a table</Link>
           </div>
+          <div className="hero-experiences" aria-label="Explore our experiences">
+            {serviceNav.map(([label, href], index) => <Link href={href} key={href}><small>0{index + 1}</small><span>{label}</span><b aria-hidden="true">↗</b></Link>)}
+          </div>
         </div>
-        <div className="hero-food-stack hero-food-stack-right" aria-hidden="true">
-          <span className="hero-food-card hero-food-card-c"><img src={fallbackProducts[4].imageUrl!} alt="" /><b>Passionfruit<br />Mojito</b></span>
-          <span className="hero-food-card hero-food-card-d"><img src={fallbackProducts[1].imageUrl!} alt="" /><b>Beef Suya<br />Platter</b></span>
-        </div>
-        <span className="hero-stamp">Good food<br />good people<br />good times</span>
-        <span className="hero-index" aria-hidden="true">EST. / LAGOS</span>
+        <div className="hero-photo-caption"><span>Good food. Good company.</span><small>Make yourself at home.</small></div>
       </section>
 
       <section className="service-gateways" id="three-ways" aria-labelledby="service-heading">
@@ -492,10 +519,19 @@ function ProductTile({ product, add }: { product: Product; add: (product: Produc
   const variant = availableVariants.find((item) => item.id === variantId);
   const displayedPrice = Number(product.price) + Number(variant?.priceDelta ?? 0);
   const canAdd = product.isAvailable && (!product.variants.length || Boolean(variant));
+  const useImageFallback = (image: HTMLImageElement) => {
+    const fallback = product.category.serviceLine === 'BAKERY' && product.category.slug !== 'cakes' ? '/bakery-hero-bread.webp' : '/menu-hero-v1.webp';
+    if (!image.src.endsWith(fallback)) {
+      image.src = fallback;
+      image.alt = `${product.category.serviceLine.toLowerCase()} selections at De Big Tank`;
+    }
+  };
   return (
     <article className={`product-card ${!product.isAvailable ? 'sold-out' : ''}`}>
       <div className="product-image-wrap">
-        <img src={product.imageUrl ?? fallbackProducts[0].imageUrl!} alt={product.altText ?? product.name} />
+        <img src={product.imageUrl ?? '/menu-hero-v1.webp'} alt={product.altText ?? product.name} ref={(image) => {
+          if (image?.complete && image.naturalWidth === 0) useImageFallback(image);
+        }} onError={(event) => useImageFallback(event.currentTarget)} />
         {!product.isAvailable && <span className="sold-out-badge">Sold out</span>}
       </div>
       <div className="product-body">
