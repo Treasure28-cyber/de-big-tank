@@ -10,7 +10,8 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "seed:admin": "ts-node prisma/seed.ts",
-    "seed:content": "ts-node prisma/seed-content.ts"
+    "seed:content": "ts-node prisma/seed-content.ts",
+    "seed:gallery": "ts-node prisma/seed-gallery.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

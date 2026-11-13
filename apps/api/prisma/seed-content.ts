@@ -1,3 +1,5 @@
+import { ConfigModule } from '@nestjs/config';
+import { resolve } from 'node:path';
 import { PrismaClient, ServiceLine } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -13,15 +15,16 @@ const categories = [
 ];
 
 const products = [
-  { id: 'jollof', name: 'Rice', slug: 'smoky-jollof-rice', description: 'Slow-cooked party jollof with grilled chicken and ripe plantain. The version that makes people ask for the recipe.', price: 6500, imageUrl: publicImage('/jollof-chicken-plantain.jpg'), altText: 'Nigerian jollof rice with grilled chicken and golden fried plantain', isAvailable: true, allowsSpecialNotes: false, categorySlug: 'mains', variants: [] },
-  { id: 'suya', name: 'Smoked Beef Ribs', slug: 'beef-suya-platter', description: 'Spiced, smoked and fall-off-the-bone. Served with house pepper sauce and a side of your choice.', price: 7200, imageUrl: 'https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?auto=format&fit=crop&w=1200&q=82', altText: 'Smoked beef ribs with house pepper sauce', isAvailable: true, allowsSpecialNotes: false, categorySlug: 'grills', variants: [] },
-  { id: 'cake', name: 'Celebration Cake', slug: 'red-velvet-cake', description: 'Four tender layers of moist sponge with cream cheese frosting, finished to order. Built for the moments that deserve more than candles.', price: 18500, imageUrl: publicImage('/celebration-cake.jpg'), altText: 'Celebration cake with white flowers and chocolate drips', isAvailable: true, allowsSpecialNotes: true, categorySlug: 'cakes', variants: [{ name: '8 inch', priceDelta: 0 }, { name: '10 inch', priceDelta: 5500 }] },
+  { id: 'jollof', name: 'Rice', slug: 'smoky-jollof-rice', description: 'Party jollof the way it is supposed to taste — slow-cooked, smoky, deeply flavoured, with grilled chicken and ripe plantain. The version that makes everyone at the table claim they are not hungry and then ask for seconds.', price: 6500, imageUrl: publicImage('/jollof-chicken-plantain.jpg'), altText: 'Nigerian jollof rice with grilled chicken and golden fried plantain', isAvailable: true, allowsSpecialNotes: false, categorySlug: 'mains', variants: [] },
+  { id: 'suya', name: 'Smoked Beef Ribs', slug: 'beef-suya-platter', description: 'Spiced, smoked until the meat barely needs a knife, and served with a house pepper sauce that earns its place on the plate. The kind of dish you remember when you are deciding where to eat next time.', price: 7200, imageUrl: 'https://images.unsplash.com/photo-1529193591184-b1d58069ecdd?auto=format&fit=crop&w=1200&q=82', altText: 'Smoked beef ribs with house pepper sauce', isAvailable: true, allowsSpecialNotes: false, categorySlug: 'grills', variants: [] },
+  { id: 'cake', name: 'Celebration Cake', slug: 'red-velvet-cake', description: 'Four layers of properly moist sponge with cream cheese frosting, finished to your specification. Built for the moments that deserve more than a supermarket shelf. Because the people you are celebrating deserve better than ordinary.', price: 18500, imageUrl: publicImage('/celebration-cake.jpg'), altText: 'Celebration cake with white flowers and chocolate drips', isAvailable: true, allowsSpecialNotes: true, categorySlug: 'cakes', variants: [{ name: '8 inch', priceDelta: 0 }, { name: '10 inch', priceDelta: 5500 }] },
   { id: 'croissant', name: 'Butter Croissant', slug: 'butter-croissant', description: 'Freshly baked, crisp and deeply buttery.', price: 2200, imageUrl: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=1200&q=82', altText: 'Fresh butter croissants', isAvailable: false, allowsSpecialNotes: false, categorySlug: 'pastries', variants: [] },
   { id: 'mojito', name: 'Passionfruit Mojito', slug: 'passionfruit-mojito', description: 'Fresh mint, citrus and passionfruit over ice.', price: 5500, imageUrl: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=1200&q=82', altText: 'Passionfruit mojito cocktail', isAvailable: true, allowsSpecialNotes: false, categorySlug: 'cocktails', variants: [{ name: 'Zero-proof', priceDelta: -500 }, { name: 'Classic', priceDelta: 0 }] },
   { id: 'platter', name: 'After Hours Platter', slug: 'after-hours-platter', description: 'Wings, fries, sliders and signature dips for the table.', price: 14500, imageUrl: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=1200&q=82', altText: 'Shared platter with wings, fries and sliders', isAvailable: true, allowsSpecialNotes: false, categorySlug: 'shared-plates', variants: [] },
 ];
 
 async function main() {
+  await ConfigModule.forRoot({ envFilePath: resolve(__dirname, '../.env') });
   const categoryIds = new Map<string, string>();
   for (const category of categories) {
     const saved = await prisma.category.upsert({
@@ -69,10 +72,10 @@ async function main() {
     whatsappNumber: '2347037236666',
     phone: '07037236666',
     email: 'de.bigtankassociate@gmail.com',
-    address: 'Km 1 Ugbomoro Road, Warri, Delta State, Nigeria',
+    address: 'Km 1 Ugbomro Road, Warri, Delta State, Nigeria',
     businessHours: { Restaurant: '11am – 10pm', Bakery: '9am – 8pm', Lounge: '6pm – 11pm' },
-    heroTitle: 'One house. Three moods.',
-    heroSubtitle: 'Restaurant. Bakery. Lounge. One address for every version of your day, from the first craving to the last round.',
+    heroTitle: 'The best part of your day happens here.',
+    heroSubtitle: 'Restaurant. Bakery. Lounge. Whatever mood finds you — hungry, celebratory, or in need of a good evening — De Big Tank has the room, the food and the people for it.',
   };
   await prisma.siteSettings.upsert({
     where: { id: 'default' },
@@ -81,9 +84,9 @@ async function main() {
   });
 
   const friday = {
-    title: 'Friday Lounge Service.',
-    description: 'Gather your people. Signature cocktails, shared plates and the right energy to close out the week properly. Reservations recommended.',
-    imageUrl: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?auto=format&fit=crop&w=1200&q=82',
+    title: 'The right way to end the week.',
+    description: 'Gather the people who matter. Signature cocktails, generous shared plates and an atmosphere that makes the whole week worth it. This is not just Friday night out — this is the Friday night people ask about on Saturday morning. Reservations recommended.',
+    imageUrl: publicImage('/friday-friends-1088.webp'),
     isActive: true,
   };
   await prisma.promotion.upsert({

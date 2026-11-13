@@ -1,9 +1,12 @@
+import { ConfigModule } from '@nestjs/config';
+import { resolve } from 'node:path';
 import * as bcrypt from 'bcrypt';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 async function main() {
+  await ConfigModule.forRoot({ envFilePath: resolve(__dirname, '../.env') });
   const email = process.env.INITIAL_ADMIN_EMAIL;
   const password = process.env.INITIAL_ADMIN_PASSWORD;
   if (!email || !password) {

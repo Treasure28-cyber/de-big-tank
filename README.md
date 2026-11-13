@@ -52,3 +52,7 @@ Never commit `.env` files or production credentials.
 - `apps/web/vercel.json` configures the Next.js workspace for Vercel.
 
 Set `WEB_ORIGIN` to the final frontend origin and `NEXT_PUBLIC_API_URL` to the final API origin before building production. Deployment is not complete until the real environment values, first administrator and business content are configured.
+
+## Gallery photos
+
+Run `npm run seed:gallery --workspace=@de-big-tank/api` to add the current website photography to the admin gallery. This imports missing photos and repairs the two legacy stock URLs without replacing staff captions, display order, or visibility choices. Repeat runs are safe. In the Gallery tab, use Edit to change the URL, caption, order, or visibility. Local development URLs are supported. File uploads require the Cloudinary settings listed above.

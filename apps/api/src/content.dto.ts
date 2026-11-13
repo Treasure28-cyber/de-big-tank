@@ -71,7 +71,7 @@ export class CreateProductDto {
   @IsString() @MinLength(2) @MaxLength(2_000) description!: string;
   @Type(() => Number) @IsNumber({ maxDecimalPlaces: 2 }) @Min(0) price!: number;
   @IsString() categoryId!: string;
-  @IsOptional() @IsUrl({ require_protocol: true }) imageUrl?: string;
+  @IsOptional() @IsUrl({ require_protocol: true, require_tld: false }) imageUrl?: string;
   @IsOptional() @IsString() @MaxLength(180) altText?: string;
   @IsOptional() @IsBoolean() isAvailable?: boolean;
   @IsOptional() @IsBoolean() allowsSpecialNotes?: boolean;
@@ -84,7 +84,7 @@ export class UpdateProductDto {
   @IsOptional() @IsString() @MinLength(2) @MaxLength(2_000) description?: string;
   @IsOptional() @Type(() => Number) @IsNumber({ maxDecimalPlaces: 2 }) @Min(0) price?: number;
   @IsOptional() @IsString() categoryId?: string;
-  @IsOptional() @IsUrl({ require_protocol: true }) imageUrl?: string;
+  @IsOptional() @IsUrl({ require_protocol: true, require_tld: false }) imageUrl?: string;
   @IsOptional() @IsString() @MaxLength(180) altText?: string;
   @IsOptional() @IsBoolean() isAvailable?: boolean;
   @IsOptional() @IsBoolean() allowsSpecialNotes?: boolean;
@@ -92,7 +92,7 @@ export class UpdateProductDto {
 }
 
 export class CreateGalleryDto {
-  @IsUrl({ require_protocol: true }) imageUrl!: string;
+  @IsUrl({ require_protocol: true, require_tld: false }) imageUrl!: string;
   @IsString() @MinLength(2) @MaxLength(180) altText!: string;
   @IsOptional() @IsString() @MaxLength(500) caption?: string;
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) sortOrder?: number;
@@ -100,7 +100,7 @@ export class CreateGalleryDto {
 }
 
 export class UpdateGalleryDto {
-  @IsOptional() @IsUrl({ require_protocol: true }) imageUrl?: string;
+  @IsOptional() @IsUrl({ require_protocol: true, require_tld: false }) imageUrl?: string;
   @IsOptional() @IsString() @MinLength(2) @MaxLength(180) altText?: string;
   @IsOptional() @IsString() @MaxLength(500) caption?: string;
   @IsOptional() @Type(() => Number) @IsInt() @Min(0) sortOrder?: number;
@@ -111,7 +111,7 @@ export class CreatePromotionDto {
   @IsString() @MinLength(2) @MaxLength(120) title!: string;
   @IsString() @Matches(slugPattern) slug!: string;
   @IsString() @MinLength(2) @MaxLength(2_000) description!: string;
-  @IsOptional() @IsUrl({ require_protocol: true }) imageUrl?: string;
+  @IsOptional() @IsUrl({ require_protocol: true, require_tld: false }) imageUrl?: string;
   @IsOptional() @IsDateString() startsAt?: string;
   @IsOptional() @IsDateString() endsAt?: string;
   @IsOptional() @IsBoolean() isActive?: boolean;
@@ -121,7 +121,7 @@ export class UpdatePromotionDto {
   @IsOptional() @IsString() @MinLength(2) @MaxLength(120) title?: string;
   @IsOptional() @IsString() @Matches(slugPattern) slug?: string;
   @IsOptional() @IsString() @MinLength(2) @MaxLength(2_000) description?: string;
-  @IsOptional() @IsUrl({ require_protocol: true }) imageUrl?: string;
+  @IsOptional() @IsUrl({ require_protocol: true, require_tld: false }) imageUrl?: string;
   @IsOptional() @IsDateString() startsAt?: string;
   @IsOptional() @IsDateString() endsAt?: string;
   @IsOptional() @IsBoolean() isActive?: boolean;
@@ -135,7 +135,7 @@ export class UpdateSettingsDto {
 
   @IsOptional() @IsString() @MaxLength(120) businessName?: string;
   @IsOptional() @IsString() @MaxLength(180) tagline?: string;
-  @IsOptional() @IsPhoneNumber() phone?: string;
+  @IsOptional() @IsPhoneNumber('NG') phone?: string;
   @IsOptional() @IsEmail() email?: string;
   @IsOptional() @IsString() @MaxLength(500) address?: string;
   @IsOptional() @IsUrl({ require_protocol: true }) mapEmbedUrl?: string;

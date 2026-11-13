@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'De Big Tank | Restaurant, Bakery & Lounge',
-    description: 'One house. Three moods.',
+    description: 'The best part of your day happens here.',
     images: ['/og-v2.webp'],
   },
 };
@@ -53,7 +53,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         description: 'A restaurant, bakery and lounge in Warri, Delta State for Nigerian food, fresh baking, cocktails and memorable evenings.',
         address: {
           '@type': 'PostalAddress',
-          streetAddress: 'Km 1 Ugbomoro Road',
+          streetAddress: 'Km 1 Ugbomro Road',
           addressLocality: 'Warri',
           addressRegion: 'Delta State',
           addressCountry: 'NG',
@@ -72,7 +72,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     ],
   };
   return (
-    <html lang="en">
+    <html lang="en" data-scroll-behavior="smooth" data-theme="dark" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: `try { document.documentElement.dataset.theme = localStorage.getItem("dbt-theme-v2") === "light" ? "light" : "dark"; } catch { document.documentElement.dataset.theme = "dark"; }` }} />
+      </head>
       <body>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, '\\u003c') }} />
         {children}

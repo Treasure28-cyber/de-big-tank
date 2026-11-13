@@ -1,6 +1,8 @@
 'use client';
 
-import { FormEvent, useCallback, useEffect, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useState, useSyncExternalStore } from 'react';
+
+import { subscribeTheme, getTheme, getServerTheme, toggleTheme } from '../lib/theme';
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 type Tab = 'overview' | 'categories' | 'products' | 'gallery' | 'settings';
@@ -115,17 +117,11 @@ export default function Admin() {
 
   if (!token) return <AdminLogin submit={login} loading={loading} error={error} />;
 
-  const logout = () => {
-    window.sessionStorage.removeItem('dbt-admin-token');
-    window.sessionStorage.removeItem('dbt-admin-name');
-    setToken('');
-  };
-
   return (
     <div className="admin-shell">
       <aside className="admin-sidebar">
         <a className="admin-brand" href="/" target="_blank" rel="noreferrer" aria-label="Open the De Big Tank public website">
-          <img className="admin-brand-logo" src="/brand-logo-maroon.webp" alt="" />
+          <img className="admin-brand-logo brand-logo-light" src="/brand-logo-maroon.webp" alt="" /><img className="admin-brand-logo brand-logo-dark" src="/brand-logo-transparent.webp" alt="" />
           <div><strong>De Big Tank</strong><small>Staff workspace</small></div>
         </a>
         <nav>
@@ -137,7 +133,7 @@ export default function Admin() {
             ['settings', 'Site settings'],
           ] as [Tab, string][]).map(([value, label]) => <button key={value} className={tab === value ? 'active' : ''} onClick={() => setTab(value)}>{label}</button>)}
         </nav>
-        <button className="admin-logout" onClick={logout}>Sign out</button>
+        <AdminThemeSwitch />
       </aside>
       <main className="admin-main">
         <header className="admin-topbar"><div><p>Staff workspace</p><h1>{tab === 'overview' ? `Welcome, ${adminName}` : tab === 'products' ? 'Menu items' : titleCase(tab)}</h1></div><a href="/" target="_blank" rel="noreferrer">View public site ↗</a></header>
@@ -154,11 +150,16 @@ export default function Admin() {
   );
 }
 
+function AdminThemeSwitch() {
+  const theme = useSyncExternalStore(subscribeTheme, getTheme, getServerTheme);
+  return <button type="button" className="admin-theme-switch" onClick={toggleTheme} aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}><span aria-hidden="true">{theme === 'dark' ? '?' : '?'}</span> {theme === 'dark' ? 'Light mode' : 'Dark mode'}</button>;
+}
+
 function AdminLogin({ submit, loading, error }: { submit: (event: FormEvent<HTMLFormElement>) => void; loading: boolean; error: string }) {
   return (
     <main className="admin-login">
-      <section className="admin-login-brand"><div><img className="admin-login-logo" src="/brand-logo-maroon.webp" alt="De Big Tank" /><p>De Big Tank</p><h1>Everything guests see, managed in one place.</h1><small>Restaurant · Bakery · Lounge</small></div></section>
-      <section className="admin-login-form"><form onSubmit={submit}><p className="eyebrow">Staff only</p><h2>Welcome back</h2><p>Sign in to manage menus, images and business information.</p>{error && <div className="admin-alert error">{error}</div>}<label><span>Email</span><input name="email" type="email" required autoComplete="username" /></label><label><span>Password</span><input name="password" type="password" required minLength={8} autoComplete="current-password" /></label><button disabled={loading}>{loading ? 'Signing in…' : 'Sign in'}</button><a href="/">← Return to public site</a></form></section>
+      <section className="admin-login-brand"><div><img className="admin-login-logo" src="/brand-logo-transparent.webp" alt="De Big Tank" /><p>De Big Tank</p><h1>Everything your guests experience, managed in one place.</h1><small>Restaurant · Bakery · Lounge</small></div></section>
+      <section className="admin-login-form"><div className="admin-login-theme"><AdminThemeSwitch /></div><form onSubmit={submit}><p className="eyebrow">Staff only</p><h2>Welcome back.</h2><p>Sign in to update menus, images and business information across all three experiences.</p>{error && <div className="admin-alert error">{error}</div>}<label><span>Email</span><input name="email" type="email" required autoComplete="username" /></label><label><span>Password</span><input name="password" type="password" required minLength={8} autoComplete="current-password" /></label><button disabled={loading}>{loading ? 'Signing in…' : 'Sign in'}</button><a href="/">← Back to the site</a></form></section>
     </main>
   );
 }
@@ -210,7 +211,7 @@ function GalleryManager({ records, editing, setEditing, mutate }: ManagerProps) 
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
   useEffect(() => {
-    setUploadedUrl(String(editing?.imageUrl ?? ''));
+    setUploadedUrl(editing?.imageUrl ? new URL(String(editing.imageUrl), window.location.origin).href : '');
     setUploadError('');
   }, [editing]);
   const upload = async (file?: File) => {
@@ -237,10 +238,15 @@ function GalleryManager({ records, editing, setEditing, mutate }: ManagerProps) 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const body = { imageUrl: form.get('imageUrl'), altText: form.get('altText'), caption: form.get('caption'), sortOrder: Number(form.get('sortOrder') || 0), isActive: form.get('isActive') === 'on' };
+    const body = { imageUrl: new URL(String(form.get('imageUrl')), window.location.origin).href, altText: form.get('altText'), caption: form.get('caption'), sortOrder: Number(form.get('sortOrder') || 0), isActive: form.get('isActive') === 'on' };
     void mutate(editing ? `/admin/gallery/${editing.id}` : '/admin/gallery', editing ? 'PATCH' : 'POST', body);
   };
-  return <ManagerLayout title={editing ? 'Edit gallery image' : 'Add gallery image'} note="Upload an image through Cloudinary, or paste an existing hosted image URL." form={<form key={String(editing?.id ?? 'new')} onSubmit={submit} className="admin-form"><label className="wide"><span>Upload image</span><input type="file" accept="image/jpeg,image/png,image/webp,image/avif" onChange={(event) => void upload(event.target.files?.[0])} />{uploading && <small>Uploading…</small>}{uploadError && <small className="field-error">{uploadError}</small>}</label><label className="wide"><span>Image URL</span><input name="imageUrl" type="url" value={uploadedUrl} onChange={(event) => setUploadedUrl(event.target.value)} required /></label><AdminField name="altText" label="Accessible image description" defaultValue={editing?.altText} required /><AdminField name="caption" label="Caption" defaultValue={editing?.caption} /><AdminField name="sortOrder" label="Display order" type="number" min="0" defaultValue={editing?.sortOrder ?? 0} /><Check name="isActive" label="Visible in gallery" defaultChecked={editing ? Boolean(editing.isActive) : true} /><FormButtons editing={editing} cancel={() => setEditing(null)} /></form>} list={<div className="admin-gallery-list">{records.map((record) => <article key={String(record.id)}>{record.imageUrl ? <img src={String(record.imageUrl)} alt={String(record.altText ?? '')} /> : <div /> }<strong>{String(record.caption || record.altText)}</strong><RowActions edit={() => setEditing(record)} toggle={() => mutate(`/admin/gallery/${record.id}`, 'PATCH', { isActive: !record.isActive })} remove={() => confirmDelete(() => mutate(`/admin/gallery/${record.id}`, 'DELETE'))} active={Boolean(record.isActive)} /></article>)}</div>} />;
+  return <ManagerLayout title={editing ? 'Edit gallery image' : 'Add gallery image'} note="Upload a photo, or paste its full image URL. Edit captions, change the display order, and show or hide images here." form={<form key={String(editing?.id ?? 'new')} onSubmit={submit} className="admin-form"><label className="wide"><span>Upload image</span><input type="file" accept="image/jpeg,image/png,image/webp,image/avif" onChange={(event) => void upload(event.target.files?.[0])} />{uploading && <small>Uploading…</small>}{uploadError && <small className="field-error">{uploadError}</small>}</label><label className="wide"><span>Image URL</span><input name="imageUrl" type="url" value={uploadedUrl} onChange={(event) => setUploadedUrl(event.target.value)} required /></label><AdminField name="altText" label="Accessible image description" defaultValue={editing?.altText} required /><AdminField name="caption" label="Caption" defaultValue={editing?.caption} /><AdminField name="sortOrder" label="Display order" type="number" min="0" defaultValue={editing?.sortOrder ?? 0} /><Check name="isActive" label="Visible in gallery" defaultChecked={editing ? Boolean(editing.isActive) : true} /><FormButtons editing={editing} cancel={() => setEditing(null)} /></form>} list={<div className="admin-gallery-list">{records.map((record) => <article key={String(record.id)}><GalleryPreview key={String(record.imageUrl)} src={String(record.imageUrl ?? '')} alt={String(record.altText ?? '')} /><strong>{String(record.caption || record.altText)}</strong><small className="gallery-status">{record.isActive ? 'Visible' : 'Hidden'}</small><RowActions edit={() => setEditing(record)} toggle={() => mutate(`/admin/gallery/${record.id}`, 'PATCH', { isActive: !record.isActive })} remove={() => confirmDelete(() => mutate(`/admin/gallery/${record.id}`, 'DELETE'))} active={Boolean(record.isActive)} /></article>)}</div>} />;
+}
+
+function GalleryPreview({ src, alt }: { src: string; alt: string }) {
+  const [failed, setFailed] = useState(false);
+  return src && !failed ? <img src={src} alt={alt} loading="lazy" onError={() => setFailed(true)} /> : <div className="gallery-image-error" role="status">Image unavailable. Edit this image to replace its URL.</div>;
 }
 
 function SettingsManager({ settings, mutate }: { settings: RecordValue | null; mutate: ManagerProps['mutate'] }) {

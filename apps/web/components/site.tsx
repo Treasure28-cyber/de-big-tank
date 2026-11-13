@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
+import { subscribeTheme, getTheme, getServerTheme, toggleTheme } from '../lib/theme';
 import type {} from 'react/canary';
-import { FormEvent, ViewTransition, useEffect, useMemo, useRef, useState } from 'react';
+import { FormEvent, type ReactNode, ViewTransition, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import {
   Category,
   fallbackCategories,
@@ -75,23 +76,9 @@ export default function Site({ slug }: { slug?: PublicSlug }) {
   const [cartOpen, setCartOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const theme = useSyncExternalStore(subscribeTheme, getTheme, getServerTheme);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
   const mobileNavRef = useRef<HTMLElement>(null);
-
-  useEffect(() => {
-    const savedTheme = window.localStorage.getItem('dbt-theme');
-    if (savedTheme === 'light' || savedTheme === 'dark') {
-      setTheme(savedTheme);
-      return;
-    }
-  }, []);
-
-  const toggleTheme = () => setTheme((current) => {
-    const next = current === 'light' ? 'dark' : 'light';
-    window.localStorage.setItem('dbt-theme', next);
-    return next;
-  });
 
   useEffect(() => {
     if (!mobileOpen) return;
@@ -255,12 +242,13 @@ export default function Site({ slug }: { slug?: PublicSlug }) {
   const activeLine = lineFromSlug(slug);
 
   return (
-    <div className="site-shell" data-theme={theme}>
+    <div className="site-shell">
       <a href="#main-content" className="skip-link">Skip to content</a>
       <header className="site-header">
         <div className="header-inner">
           <Link href="/" className="brand" aria-label="De Big Tank home">
-            <img className="brand-logo" src={theme === 'light' ? '/brand-logo-maroon.webp' : '/brand-logo-transparent.webp'} alt="" />
+            <img className="brand-logo brand-logo-light" src="/brand-logo-maroon.webp" alt="" />
+            <img className="brand-logo brand-logo-dark" src="/brand-logo-transparent.webp" alt="" />
             <span>
               <strong>De Big Tank</strong>
               <small>Restaurant · Bakery · Lounge</small>
@@ -333,22 +321,37 @@ export default function Site({ slug }: { slug?: PublicSlug }) {
   );
 }
 
+// CSS chooses the copy before paint, including on resize and without JavaScript.
+function ResponsiveCopy({ mobile, desktop }: { mobile: ReactNode; desktop: ReactNode }) {
+  return <><span className="copy-mobile">{mobile}</span><span className="copy-desktop">{desktop}</span></>;
+}
+
+const mobileProductCopy: Record<string, string> = {
+  'smoky-jollof-rice': "The version everyone claims they're not hungry for — then asks for seconds.",
+  'beef-suya-platter': 'The ribs that earn the silence at the table.',
+  'red-velvet-cake': "Because the people you're celebrating deserve better than a supermarket shelf.",
+};
+
 function Home({ content, add }: { content: Content; add: (product: Product, variant?: Variant) => void }) {
   const services = [
-    { number: '01', title: 'Restaurant', eyebrow: 'Eat generously', description: 'Nigerian favourites done properly. Fire-kissed grills, slow-cooked stews, rice the way it’s meant to taste and plates generous enough for the whole table.', href: '/restaurant', image: '/jollof-sharing-platter.jpg', action: 'See the food menu' },
-    { number: '02', title: 'Bakery', eyebrow: 'Made fresh daily', description: 'Artisan breads, buttery pastries and celebration cakes built layer by layer. Whether you need something for the morning or something to mark the moment, it starts here.', href: '/bakery', image: '/artisan-bread.jpg', action: 'Visit the bakery' },
-    { number: '03', title: 'Lounge', eyebrow: 'Stay after dark', description: 'Considered cocktails, shared plates and unhurried conversation. The kind of evening that earns its own story. Pull up a seat and let the night decide the rest.', href: '/lounge', image: '/lounge-interior.jpeg', action: 'Enter the lounge' },
+    { number: '01', title: 'Restaurant', eyebrow: 'EAT THE WAY YOU WERE MEANT TO', mobile: 'Nigerian food that makes the table go quiet.', description: 'Nigerian food done the way it stays in your memory. Generous plates, proper grills, slow-cooked flavours that make the whole table go quiet for a moment. This is what a good meal feels like.', href: '/restaurant', image: '/jollof-sharing-platter.jpg', action: 'See the food menu' },
+    { number: '02', title: 'Bakery', eyebrow: 'MADE FRESH. MEANS SOMETHING.', mobile: 'The smell hits you before the door opens.', description: 'Soft loaves, buttery pastries and celebration cakes made for the moments that deserve something better than ordinary. The kind of baking people plan their morning around.', href: '/bakery', image: '/artisan-bread.jpg', action: 'Visit the bakery' },
+    { number: '03', title: 'Lounge', eyebrow: 'THE EVENING YOU ACTUALLY WANTED', mobile: 'The evening you have been waiting for all week.', description: 'Considered cocktails, good conversation and the kind of unhurried atmosphere that makes you realise how rare it is to truly enjoy a night out. Come for one drink. Stay because it is exactly what you needed.', href: '/lounge', image: '/lounge-interior.jpeg', action: 'Enter the lounge' },
   ];
+  const available = content.products.filter((product) => product.isAvailable);
+  const featured = ['smoky-jollof-rice', 'beef-suya-platter', 'red-velvet-cake']
+    .flatMap((slug) => available.filter((product) => product.slug === slug));
+  const featuredProducts = [...featured, ...available.filter((product) => !featured.includes(product))].slice(0, 3);
   return (
     <>
       <section className="hero">
         <img className="home-hero-image" src="/menu-hero-v1.webp" alt="Jollof rice, grilled suya, fresh pastries and cocktails in a warmly lit lounge" fetchPriority="high" />
         <div className="hero-content">
-          <p className="eyebrow"><span className="hero-status-dot" /> Warri, Delta State / Open daily</p>
-          <h1>One house.<br /><em>Three moods.</em></h1>
-          <p className="hero-copy">Restaurant. Bakery. Lounge. One address for every version of your day, from the first craving to the last round.</p>
+          <p className="eyebrow"><span className="hero-status-dot" /> Warri, Delta State · Open daily</p>
+          <h1>{content.settings.heroTitle ?? fallbackSettings.heroTitle}</h1>
+          <p className="hero-copy"><ResponsiveCopy mobile={<>Restaurant. Bakery. Lounge.<br />Whatever mood finds you — this is where it gets good.</>} desktop={content.settings.heroSubtitle ?? fallbackSettings.heroSubtitle} /></p>
           <div className="hero-actions">
-            <Link href="#three-ways" className="button primary">Choose your mood <span aria-hidden="true">↓</span></Link>
+            <Link href="#three-ways" className="button primary">Find your mood <span aria-hidden="true">↓</span></Link>
             <Link href="/reserve" className="button outline-dark">Book a table</Link>
           </div>
           <div className="hero-experiences" aria-label="Explore our experiences">
@@ -360,10 +363,10 @@ function Home({ content, add }: { content: Content; add: (product: Product, vari
 
       <section className="service-gateways" id="three-ways" aria-labelledby="service-heading">
         <div className="section-intro align-left">
-          <p className="eyebrow">De Big Tank / Three ways in</p>
+          <p className="eyebrow">De Big Tank · Three ways in</p>
           <div className="service-intro-row">
-            <h2 id="service-heading">Pick your<br /><em>kind of good.</em></h2>
-            <p>Three distinct experiences. One unmistakably warm welcome. Start wherever the day finds you.</p>
+            <h2 id="service-heading">Whatever brought you here, you came to the right place.</h2>
+            <p className="desktop-only">Three distinct experiences under one roof. The kind of place you tell people about before you have even left.</p>
           </div>
         </div>
         <div className="service-grid">
@@ -371,7 +374,7 @@ function Home({ content, add }: { content: Content; add: (product: Product, vari
             <Link href={service.href} className="service-card" key={service.title}>
               <span className="service-card-top"><small>{service.number} /</small><small>{service.eyebrow}</small></span>
               <span className="service-card-image"><img src={service.image} alt="" /></span>
-              <span className="service-card-copy"><strong>{service.title}</strong><span>{service.description}</span></span>
+              <span className="service-card-copy"><strong>{service.title}</strong><span><ResponsiveCopy mobile={service.mobile} desktop={service.description} /></span></span>
               <b>{service.action} <span aria-hidden="true">→</span></b>
             </Link>
           ))}
@@ -382,22 +385,22 @@ function Home({ content, add }: { content: Content; add: (product: Product, vari
         <div className="section-heading-row">
           <div>
             <p className="eyebrow">From our menus</p>
-            <h2>Made for the whole table.</h2>
+            <h2>Food people talk about on the way home.</h2>
           </div>
           <Link href="/menu" className="text-link">Explore every menu <span aria-hidden="true">→</span></Link>
         </div>
         <div className="product-grid">
-          {content.products.filter((product) => product.isAvailable).slice(0, 3).map((product) => <ProductTile key={product.id} product={product} add={add} />)}
+          {featuredProducts.map((product) => <ProductTile key={product.id} product={product} add={add} featured />)}
         </div>
       </section>
 
       <section className="story-section">
         <div className="story-image"><img src="/lounge-interior.jpeg" alt="The warm, elegant lounge at De Big Tank" /></div>
         <div className="story-copy">
-          <p className="eyebrow">Stay a little longer</p>
-          <h2>Your new favourite place to <em>unwind.</em></h2>
-          <p>Lunch that turns into dessert. A bakery stop that becomes a celebration order. Drinks that ease into a full evening. De Big Tank brings it all under one roof because the best days rarely stick to the plan.</p>
-          <Link href="/about" className="text-link">Our story <span aria-hidden="true">→</span></Link>
+          <p className="eyebrow">THE THING ABOUT DE BIG TANK</p>
+          <h2><ResponsiveCopy mobile={<>Come in with an hour.<br />Leave with a story.</>} desktop="The plans that become your best memories start here." /></h2>
+          <p className="desktop-only">A lunch that stretches into the afternoon. A bakery stop that turns into a full celebration order. Drinks that ease into an evening nobody wanted to end. De Big Tank is designed around the way people actually enjoy themselves — not how they planned to. Come in with an hour. Leave with a story.</p>
+          <Link href="/about" className="text-link">See our story <span aria-hidden="true">→</span></Link>
           <span className="script-note">stay awhile ♡</span>
         </div>
       </section>
@@ -406,7 +409,7 @@ function Home({ content, add }: { content: Content; add: (product: Product, vari
 
       <section className="gallery-preview">
         <div className="section-heading-row">
-          <div><p className="eyebrow">Inside De Big Tank</p><h2>A taste of the room.</h2><p className="gallery-subline">Come for the food. Stay for everything else.</p></div>
+          <div><p className="eyebrow">Inside De Big Tank</p><h2>This is what it feels like inside.</h2><p className="gallery-subline">Come for the food. Come back for everything else.</p></div>
         </div>
         <div className="gallery-strip">
           {content.gallery.slice(0, 4).map((item) => <img key={item.id} src={item.imageUrl} alt={item.altText} />)}
@@ -414,9 +417,9 @@ function Home({ content, add }: { content: Content; add: (product: Product, vari
       </section>
 
       <section className="closing-cta">
-        <p className="eyebrow gold">Your table is waiting</p>
-        <h2>Come hungry. Leave happy.</h2>
-        <p>Tell us when you’re coming and our team will confirm the details with you directly on WhatsApp. Walk-ins welcome, reservations preferred.</p>
+        <p className="eyebrow gold">Your table is ready</p>
+        <h2>Come hungry.<br />Leave with something to talk about.</h2>
+        <p><ResponsiveCopy mobile="WhatsApp us and we confirm in minutes. Walk-ins welcome." desktop="Tell us when you are coming and our team confirms directly on WhatsApp. Walk-ins welcome. Reservations preferred so we can make sure we are ready for you." /></p>
         <Link href="/reserve" className="button gold-button">Reserve a table</Link>
       </section>
     </>
@@ -458,23 +461,26 @@ function Catalog({ line, products, categories, add }: { line: Line; products: Pr
   ), [products, line, category, query]);
   const lineCategories = categories.filter((item) => item.serviceLine === line);
   const hero = line === 'BAKERY' ? {
-    kicker: 'Baked in Warri · Fresh every day',
-    title: 'Warm from the oven. Made to share.',
-    copy: 'Soft loaves, celebration cakes and buttery favourites, baked fresh for the moments that deserve something special.',
+    kicker: 'Baked in Warri · Fresh every morning',
+    title: 'The smell alone is worth the visit.',
+    mobile: 'Fresh daily. For ordinary mornings and moments that deserve something memorable.',
+    copy: 'Soft loaves, celebration cakes and buttery pastries made fresh every day. For ordinary mornings and the moments that deserve something memorable. The kind of baking that makes people plan their route around us.',
     image: '/bakery-hero-overlay.webp',
     alt: 'An abundant display of freshly baked breads and pastries',
     notes: ['Fresh daily', 'Custom cakes', 'Pickup available'],
   } : line === 'LOUNGE' ? {
     kicker: 'After dark at De Big Tank',
-    title: 'Good drinks. Better evenings.',
-    copy: 'Signature cocktails, chilled bottles and generous shared plates for nights that should never feel rushed.',
+    title: 'The evening you have been waiting for all week.',
+    mobile: 'Come for one drink. Stay because it is exactly what you needed.',
+    copy: 'Signature cocktails, chilled bottles and generous shared plates for nights that deserve to be unhurried. The kind of lounge where good conversations happen and nobody checks the time until they absolutely have to.',
     image: '/lounge-interior.jpeg',
     alt: 'The warm and inviting De Big Tank lounge interior',
     notes: ['Signature cocktails', 'Shared plates', 'Open late'],
   } : {
-    kicker: 'Nigerian flavour · Generously served',
-    title: 'Tradition on every plate.',
-    copy: 'Fire-kissed grills, rich local favourites and abundant plates prepared for gathering around the table.',
+    kicker: 'Nigerian flavour · Cooked with conviction',
+    title: 'The kind of food that makes you stop talking.',
+    mobile: 'No shortcuts. Just Nigerian food that earns its place on the table.',
+    copy: 'Generous portions, fire-kissed grills and local favourites prepared the way they were always meant to taste. No shortcuts. No compromise. Just proper Nigerian food that earns its place on your table.',
     image: '/restaurant-hero-overlay.webp',
     alt: 'The warmly lit De Big Tank restaurant dining room',
     notes: ['Made to order', 'Local favourites', 'Family portions'],
@@ -487,10 +493,10 @@ function Catalog({ line, products, categories, add }: { line: Line; products: Pr
         <div className="menu-hero-copy">
           <p className="eyebrow">{hero.kicker}</p>
           <h1>{hero.title}</h1>
-          <p className="menu-hero-lead">{hero.copy}</p>
+          <p className="menu-hero-lead"><ResponsiveCopy mobile={hero.mobile} desktop={hero.copy} /></p>
           <div className="menu-hero-actions">
-            <a href="#menu-list" className="button primary">Explore our Menu</a>
-            <Link href="/reserve" className="button menu-hero-secondary">Book a table</Link>
+            <a href="#menu-list" className="button primary">Explore the menu</a>
+            <Link href={line === 'BAKERY' ? '/contact' : '/reserve'} className="button menu-hero-secondary">{line === 'BAKERY' ? 'Order a cake' : 'Book a table'}</Link>
           </div>
           <div className="menu-hero-notes" aria-label={`${title} highlights`}>
             {hero.notes.map((note) => <span key={note}>{note}</span>)}
@@ -515,42 +521,46 @@ function Catalog({ line, products, categories, add }: { line: Line; products: Pr
       ) : <div className="empty-state"><h2>No matches yet</h2><p>Try another search or category.</p></div>}
     </div>
       {line === 'BAKERY' && <section className="bakery-photo-section" aria-labelledby="bakery-photo-heading">
-        <div className="section-heading-row"><div><p className="eyebrow">From the bakery</p><h2 id="bakery-photo-heading">Fresh bakes. Sweet moments.</h2></div></div>
+        <div className="section-heading-row"><div><p className="eyebrow">From the bakery today</p><h2 id="bakery-photo-heading">Made this morning. Meant for today.</h2></div></div>
         <div className="bakery-photo-grid">{[
-          ['/artisan-bread.jpg', 'Artisan bread', 'Sliced golden bread served with butter'],
-          ['/banana-nut-bread.jpg', 'Banana nut bread', 'Banana bread topped with walnuts and chocolate chips'],
-          ['/red-velvet-slice.jpg', 'Celebration layers', 'Red velvet cake layered with cream cheese frosting'],
+          ['/artisan-bread.jpg', 'The loaf people come back for.', 'Sliced golden bread served with butter'],
+          ['/banana-nut-bread.jpg', 'Something worth waking up for.', 'Banana bread topped with walnuts and chocolate chips'],
+          ['/red-velvet-slice.jpg', 'Built for the moments that matter.', 'Red velvet cake layered with cream cheese frosting'],
         ].map(([src, caption, alt]) => <figure key={src}><img src={src} alt={alt} loading="lazy" /><figcaption>{caption}</figcaption></figure>)}</div>
       </section>}
     </>
   );
 }
 
-function ProductTile({ product, add }: { product: Product; add: (product: Product, variant?: Variant) => void }) {
+function ProductTile({ product, add, featured = false }: { product: Product; add: (product: Product, variant?: Variant) => void; featured?: boolean }) {
   const availableVariants = product.variants.filter((variant) => variant.isAvailable);
   const [variantId, setVariantId] = useState(availableVariants[0]?.id ?? '');
   const variant = availableVariants.find((item) => item.id === variantId);
   const displayedPrice = Number(product.price) + Number(variant?.priceDelta ?? 0);
   const canAdd = product.isAvailable && (!product.variants.length || Boolean(variant));
+  const [imageFailed, setImageFailed] = useState(false);
   const useImageFallback = (image: HTMLImageElement) => {
-    const fallback = product.category.serviceLine === 'BAKERY' && product.category.slug !== 'cakes' ? '/bakery-hero-bread.webp' : '/menu-hero-v1.webp';
-    if (!image.src.endsWith(fallback)) {
-      image.src = fallback;
-      image.alt = `${product.category.serviceLine.toLowerCase()} selections at De Big Tank`;
+    const original = fallbackProducts.find((item) => item.slug === product.slug);
+    // Recover the original photo, rather than substituting an unrelated hero image.
+    if (original?.imageUrl?.startsWith('/') && !image.src.endsWith(original.imageUrl)) {
+      image.src = original.imageUrl;
+      image.alt = original.altText ?? product.name;
+    } else {
+      setImageFailed(true);
     }
   };
   return (
     <article className={`product-card ${!product.isAvailable ? 'sold-out' : ''}`}>
       <div className="product-image-wrap">
-        <img src={product.imageUrl ?? '/menu-hero-v1.webp'} alt={product.altText ?? product.name} ref={(image) => {
+        {imageFailed ? <div className="product-image-error" role="img" aria-label={`Photo unavailable for ${product.name}`}>Photo unavailable</div> : <img src={product.imageUrl ?? fallbackProducts.find((item) => item.slug === product.slug)?.imageUrl ?? undefined} alt={product.altText ?? product.name} ref={(image) => {
           if (image?.complete && image.naturalWidth === 0) useImageFallback(image);
-        }} onError={(event) => useImageFallback(event.currentTarget)} />
+        }} onError={(event) => useImageFallback(event.currentTarget)} />}
         {!product.isAvailable && <span className="sold-out-badge">Sold out</span>}
       </div>
       <div className="product-body">
         <p className="eyebrow">{product.category.name}</p>
         <h3>{product.name}</h3>
-        <p>{product.description}</p>
+        <p>{mobileProductCopy[product.slug] ? <ResponsiveCopy mobile={mobileProductCopy[product.slug]} desktop={product.description} /> : product.description}</p>
         {product.variants.length > 0 && (
           <label className="variant-select">
             <span>Choose an option</span>
@@ -562,7 +572,7 @@ function ProductTile({ product, add }: { product: Product; add: (product: Produc
         <div className="product-footer">
           <strong>{naira(displayedPrice)}</strong>
           <button type="button" disabled={!canAdd} onClick={() => add(product, variant)}>
-            <span className="add-label">{product.isAvailable ? 'Add to bag' : 'Unavailable'}</span>
+            <span className="add-label">{product.isAvailable ? featured && product.category.slug === 'cakes' ? <ResponsiveCopy mobile="Order now" desktop="Add to bag" /> : 'Add to bag' : 'Unavailable'}</span>
             <span className="add-icon" aria-hidden="true">{product.isAvailable ? '+' : '×'}</span>
           </button>
         </div>
@@ -572,10 +582,11 @@ function ProductTile({ product, add }: { product: Product; add: (product: Produc
 }
 
 function PromoFeature({ promotion }: { promotion: Promotion }) {
+  const isFriday = promotion.id === 'friday' || promotion.slug === 'friday-lounge-service';
   return (
-    <section className="promo-feature">
-      <div className="promo-image">{promotion.imageUrl && <img src={promotion.imageUrl} alt="" />}</div>
-      <div className="promo-copy"><p className="eyebrow gold">{promotion.id === 'friday' || promotion.slug === 'friday-lounge-service' ? 'Every Friday from 6pm' : 'Now at De Big Tank'}</p><h2>{promotion.title}</h2><p>{promotion.description}</p><Link href="/contact" className="button outline-light">Ask about this offer</Link></div>
+    <section className={`promo-feature ${isFriday ? 'friday-feature' : ''}`}>
+      <div className="promo-image">{isFriday ? <img src="/friday-friends-1088.webp" srcSet="/friday-friends-640.webp 640w, /friday-friends-1088.webp 1086w" sizes="(max-width: 900px) 100vw, 50vw" width={1086} height={1448} alt="Four friends enjoying drinks and an evening together around a restaurant table" loading="lazy" /> : promotion.imageUrl && <img src={promotion.imageUrl} alt="" />}</div>
+      <div className="promo-copy"><p className="eyebrow gold">{promotion.id === 'friday' || promotion.slug === 'friday-lounge-service' ? 'Every Friday from 6pm' : 'Now at De Big Tank'}</p><h2>{promotion.title}</h2><p>{isFriday ? <ResponsiveCopy mobile="The Friday people ask about on Saturday morning." desktop={promotion.description} /> : promotion.description}</p><Link href={promotion.id === 'friday' || promotion.slug === 'friday-lounge-service' ? '/reserve' : '/contact'} className="button outline-light">{promotion.id === 'friday' || promotion.slug === 'friday-lounge-service' ? 'Secure your spot' : 'Ask about this offer'}</Link></div>
     </section>
   );
 }
@@ -596,15 +607,15 @@ function SharedPageHero({ eyebrow, title, copy }: { eyebrow: string; title: stri
 function About() {
   return (
     <div className="editorial-page shared-hero-page">
-      <SharedPageHero eyebrow="Our story" title="One house. Three reasons to stay." copy="De Big Tank brings generous dining, warm baking and effortless lounge evenings together under one roof." />
+      <SharedPageHero eyebrow="Our story" title="Built around the way people actually gather." copy="De Big Tank exists because the best moments in life rarely fit into one category. A restaurant, a bakery and a lounge under one roof — so whatever version of a good time you are looking for, you do not have to look anywhere else." />
       <section className="editorial-split">
         <img src={fallbackProducts[0].imageUrl!} alt="A colourful meal prepared at De Big Tank" />
-        <div><p className="eyebrow">Our table</p><h2>Hospitality without the fuss.</h2><p>We built De Big Tank around the way people actually gather: a quick meal can become a long conversation, a cake can carry a whole celebration, and the right room can change the pace of an evening.</p><p>Our approach is direct—cook generously, bake fresh, pour thoughtfully and make every guest feel expected.</p></div>
+        <div><p className="eyebrow">How we do things</p><h2>Generous by default.<br />Welcoming without trying.</h2><p>We noticed the best gatherings always come back to the same things — food that feels like it was made for you, a space that makes you feel expected, and people who mean it when they say welcome. That is what we built De Big Tank around.</p></div>
       </section>
       <section className="values-row">
-        <div><span>01</span><h3>Generous by nature</h3><p>Plates, portions and service designed to make room for everyone.</p></div>
-        <div><span>02</span><h3>Made with intention</h3><p>From daily bakes to after-hours cocktails, details matter.</p></div>
-        <div><span>03</span><h3>Always welcoming</h3><p>A polished atmosphere that never feels stiff or distant.</p></div>
+        <div><span>01</span><h3>Generous by nature</h3><p>Plates designed for sharing, portions that mean it, and service that never makes you feel like a number.</p></div>
+        <div><span>02</span><h3>Made with intention</h3><p>From the first bake of the morning to the last cocktail of the evening, we care about the details so you do not have to think about them.</p></div>
+        <div><span>03</span><h3>Always welcoming</h3><p>A polished atmosphere that never feels stiff. The kind of place that feels like a good decision the moment you walk in.</p></div>
       </section>
     </div>
   );
@@ -616,8 +627,8 @@ function Contact({ settings }: { settings: SiteSettings }) {
     <div className="contact-page">
       <section>
         <p className="eyebrow">Contact</p>
-        <h1>Come through.</h1>
-        <p className="lead">Questions, orders and reservations are easiest on WhatsApp. Our team will take it from there.</p>
+        <h1>We are expecting you.</h1>
+        <p className="lead">Questions, reservations and cake orders are easiest on WhatsApp. Our team responds fast and handles the details so you can focus on looking forward to coming in.</p>
         <div className="contact-lines">
           <div><span>Call or WhatsApp</span><a href={`tel:${settings.phone ?? ''}`}>{settings.phone ?? 'To be confirmed'}</a></div>
           <div><span>Email</span><a href={`mailto:${settings.email ?? ''}`}>{settings.email ?? 'To be confirmed'}</a></div>
@@ -627,7 +638,7 @@ function Contact({ settings }: { settings: SiteSettings }) {
       </section>
       <section className="hours-panel">
         <p className="eyebrow gold">Opening hours</p>
-        <h2>Plan your visit</h2>
+        <h2>We are here when you need us.</h2>
         <dl>{hours.map(([day, time]) => <div key={day}><dt>{day}</dt><dd>{time}</dd></div>)}</dl>
       </section>
       <section className="map-panel">
@@ -658,7 +669,7 @@ function Reservation({ settings }: { settings: SiteSettings }) {
   };
   return (
     <div className="form-page">
-      <div className="form-intro"><p className="eyebrow">Reservations</p><h1>Save your seat.</h1><p>Your request opens in WhatsApp. Our team will confirm availability and the final details with you directly.</p></div>
+      <div className="form-intro"><p className="eyebrow">Reservations</p><h1>Your table is already waiting for you.</h1><p>Fill in your details and we open WhatsApp directly. Our team confirms availability and everything you need to know so your evening starts before you even arrive.</p></div>
       <form onSubmit={submit} className="reservation-form">
         <Field label="Name" name="name" required autoComplete="name" />
         <Field label="Phone" name="phone" required autoComplete="tel" inputMode="tel" pattern="[0-9+ ()-]{7,20}" />
@@ -667,9 +678,9 @@ function Reservation({ settings }: { settings: SiteSettings }) {
         <Field label="Date" name="date" type="date" min={today} required />
         <Field label="Time" name="time" type="time" required />
         <Field label="Number of guests" name="guests" type="number" min="1" max="100" required />
-        <label className="full"><span>Special request (optional)</span><textarea name="notes" rows={4} maxLength={500} /></label>
+        <label className="full"><span>Anything we should know? (optional)</span><textarea name="notes" rows={4} maxLength={500} /></label>
         <button className="button primary full" type="submit">Continue to WhatsApp</button>
-        <p className="form-note full">Nothing is booked until our team confirms with you on WhatsApp.</p>
+        <p className="form-note full">Your reservation is confirmed once our team responds on WhatsApp. We will make sure everything is ready for you.</p>
       </form>
     </div>
   );

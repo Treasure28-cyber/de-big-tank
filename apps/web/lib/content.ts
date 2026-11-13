@@ -81,9 +81,9 @@ const image = {
 };
 
 export const fallbackProducts: Product[] = [
-  { id: 'jollof', name: 'Rice', slug: 'smoky-jollof-rice', description: 'Slow-cooked party jollof with grilled chicken and ripe plantain. The version that makes people ask for the recipe.', price: 6500, imageUrl: image.jollof, altText: 'Nigerian jollof rice with grilled chicken and golden fried plantain', isAvailable: true, allowsSpecialNotes: false, category: categories[0], variants: [] },
-  { id: 'suya', name: 'Smoked Beef Ribs', slug: 'beef-suya-platter', description: 'Spiced, smoked and fall-off-the-bone. Served with house pepper sauce and a side of your choice.', price: 7200, imageUrl: image.suya, altText: 'Smoked beef ribs with house pepper sauce', isAvailable: true, allowsSpecialNotes: false, category: categories[1], variants: [] },
-  { id: 'cake', name: 'Celebration Cake', slug: 'red-velvet-cake', description: 'Four tender layers of moist sponge with cream cheese frosting, finished to order. Built for the moments that deserve more than candles.', price: 18500, imageUrl: image.cake, altText: 'Celebration cake with white flowers and chocolate drips', isAvailable: true, allowsSpecialNotes: true, category: categories[2], variants: [{ id: 'cake-8', name: '8 inch', priceDelta: 0, isAvailable: true }, { id: 'cake-10', name: '10 inch', priceDelta: 5500, isAvailable: true }] },
+  { id: 'jollof', name: 'Rice', slug: 'smoky-jollof-rice', description: 'Party jollof the way it is supposed to taste — slow-cooked, smoky, deeply flavoured, with grilled chicken and ripe plantain. The version that makes everyone at the table claim they are not hungry and then ask for seconds.', price: 6500, imageUrl: image.jollof, altText: 'Nigerian jollof rice with grilled chicken and golden fried plantain', isAvailable: true, allowsSpecialNotes: false, category: categories[0], variants: [] },
+  { id: 'suya', name: 'Smoked Beef Ribs', slug: 'beef-suya-platter', description: 'Spiced, smoked until the meat barely needs a knife, and served with a house pepper sauce that earns its place on the plate. The kind of dish you remember when you are deciding where to eat next time.', price: 7200, imageUrl: image.suya, altText: 'Smoked beef ribs with house pepper sauce', isAvailable: true, allowsSpecialNotes: false, category: categories[1], variants: [] },
+  { id: 'cake', name: 'Celebration Cake', slug: 'red-velvet-cake', description: 'Four layers of properly moist sponge with cream cheese frosting, finished to your specification. Built for the moments that deserve more than a supermarket shelf. Because the people you are celebrating deserve better than ordinary.', price: 18500, imageUrl: image.cake, altText: 'Celebration cake with white flowers and chocolate drips', isAvailable: true, allowsSpecialNotes: true, category: categories[2], variants: [{ id: 'cake-8', name: '8 inch', priceDelta: 0, isAvailable: true }, { id: 'cake-10', name: '10 inch', priceDelta: 5500, isAvailable: true }] },
   { id: 'croissant', name: 'Butter Croissant', slug: 'butter-croissant', description: 'Freshly baked, crisp and deeply buttery.', price: 2200, imageUrl: image.pastry, altText: 'Fresh butter croissants', isAvailable: false, allowsSpecialNotes: false, category: categories[3], variants: [] },
   { id: 'mojito', name: 'Passionfruit Mojito', slug: 'passionfruit-mojito', description: 'Fresh mint, citrus and passionfruit over ice.', price: 5500, imageUrl: image.cocktail, altText: 'Passionfruit mojito cocktail', isAvailable: true, allowsSpecialNotes: false, category: categories[4], variants: [{ id: 'mojito-zero', name: 'Zero-proof', priceDelta: -500, isAvailable: true }, { id: 'mojito-classic', name: 'Classic', priceDelta: 0, isAvailable: true }] },
   { id: 'platter', name: 'After Hours Platter', slug: 'after-hours-platter', description: 'Wings, fries, sliders and signature dips for the table.', price: 14500, imageUrl: image.platter, altText: 'Shared platter with wings, fries and sliders', isAvailable: true, allowsSpecialNotes: false, category: categories[5], variants: [] },
@@ -98,10 +98,12 @@ export const fallbackGallery: GalleryImage[] = [
   { id: 'gallery-bread', imageUrl: '/artisan-bread.jpg', altText: 'Sliced golden bread served with butter', caption: 'Freshly baked bread' },
   { id: 'gallery-banana-bread', imageUrl: '/banana-nut-bread.jpg', altText: 'Banana bread with walnuts, banana slices and chocolate chips', caption: 'Banana nut bread' },
   { id: 'gallery-red-velvet', imageUrl: '/red-velvet-slice.jpg', altText: 'A slice of red velvet cake layered with cream cheese frosting', caption: 'A little something sweet' },
+  { id: 'gallery-friday-friends', imageUrl: '/friday-friends-1088.webp', altText: 'Four friends enjoying drinks around a restaurant table', caption: 'Good company. Great evenings.' },
+  { id: 'gallery-lounge', imageUrl: '/lounge-interior.jpeg', altText: 'The warm lounge interior with the Stay Awhile sign', caption: 'Stay awhile' },
 ];
 
 export const fallbackPromotions: Promotion[] = [
-  { id: 'friday', title: 'Friday Lounge Service.', description: 'Gather your people. Signature cocktails, shared plates and the right energy to close out the week properly. Reservations recommended.', imageUrl: image.cocktail },
+  { id: 'friday', title: 'The right way to end the week.', description: 'Gather the people who matter. Signature cocktails, generous shared plates and an atmosphere that makes the whole week worth it. This is not just Friday night out — this is the Friday night people ask about on Saturday morning. Reservations recommended.', imageUrl: '/friday-friends-1088.webp' },
   { id: 'cake-preorder', title: 'Celebration Cakes', description: 'Pre-order a celebration cake and tell our bakers exactly how you want it finished.', imageUrl: image.cake },
 ];
 
@@ -111,10 +113,10 @@ export const fallbackSettings: SiteSettings = {
   whatsappNumber: '2347037236666',
   phone: '07037236666',
   email: 'de.bigtankassociate@gmail.com',
-  address: 'Km 1 Ugbomoro Road, Warri, Delta State, Nigeria',
+  address: 'Km 1 Ugbomro Road, Warri, Delta State, Nigeria',
   businessHours: { Restaurant: '11am – 10pm', Bakery: '9am – 8pm', Lounge: '6pm – 11pm' },
-  heroTitle: 'One house. Three moods.',
-  heroSubtitle: 'Restaurant. Bakery. Lounge. One address for every version of your day, from the first craving to the last round.',
+  heroTitle: 'The best part of your day happens here.',
+  heroSubtitle: 'Restaurant. Bakery. Lounge. Whatever mood finds you — hungry, celebratory, or in need of a good evening — De Big Tank has the room, the food and the people for it.',
   heroImageUrl: 'https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?auto=format&fit=crop&w=2000&q=88',
   heroImageAlt: 'A table filled with colourful dishes',
 };
