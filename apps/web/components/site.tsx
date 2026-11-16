@@ -355,7 +355,7 @@ function Home({ content, add }: { content: Content; add: (product: Product, vari
             <Link href="/reserve" className="button outline-dark">Book a table</Link>
           </div>
           <div className="hero-experiences" aria-label="Explore our experiences">
-            {serviceNav.map(([label, href], index) => <Link href={href} key={href}><small>0{index + 1}</small><span>{label}</span><b aria-hidden="true">↗</b></Link>)}
+            {serviceNav.map(([label, href], index) => <Link href={href} key={href}><small>0{index + 1}</small><span>{label}</span></Link>)}
           </div>
         </div>
         <div className="hero-photo-caption"><span>Good food. Good company.</span><small>Make yourself at home.</small></div>
