@@ -32,6 +32,19 @@ model Admin {
   auditEvents  AuditEvent[]
 }
 
+model Subscriber {
+  id              String   @id @default(cuid())
+  firstName       String   @map("first_name")
+  email           String   @unique
+  whatsappNumber  String?  @map("whatsapp_number")
+  whatsappOptedIn Boolean  @default(false) @map("whatsapp_opted_in")
+  createdAt       DateTime @default(now()) @map("created_at")
+  isActive        Boolean  @default(true) @map("is_active")
+
+  @@map("subscribers")
+  @@index([isActive, createdAt])
+}
+
 model Category {
   id          String      @id @default(cuid())
   name        String

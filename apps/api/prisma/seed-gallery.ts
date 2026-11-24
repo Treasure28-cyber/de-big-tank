@@ -4,6 +4,15 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const photos = [
+  ['gallery-egusi', 'egusi-soup.jpeg', 'Egusi soup prepared with seafood and leafy greens', 'Egusi soup'],
+  ['gallery-ogbono', 'ogbono-soup.jpeg', 'Ogbono soup with traditional Nigerian sides', 'Ogbono soup'],
+  ['gallery-vegetable-soup', 'vegetable-soup.jpeg', 'Rich Nigerian vegetable soup with assorted ingredients', 'Vegetable soup'],
+  ['gallery-spaghetti', 'spaghetti.jpeg', 'Seasoned spaghetti with vegetables', 'Spaghetti'],
+  ['gallery-tigernut', 'tigernut-drink.jpeg', 'De Big Tank sugar-free tigernut drink', 'Tigernut drink'],
+  ['gallery-rice-chicken', 'rice-and-chicken.jpeg', 'Seasoned rice served with grilled chicken', 'Rice and chicken'],
+  ['gallery-burger', 'burger.jpeg', 'De Big Tank burger with cheese and fresh vegetables', 'Burger'],
+  ['gallery-roasted-chicken', 'rice-and-roasted-chicken.jpeg', 'Roasted chicken served with seasoned rice', 'Rice and roasted chicken'],
+  ['gallery-pizza', 'pizza.jpeg', 'De Big Tank pizza topped with cheese and peppers', 'Pizza'],
   ['gallery-jollof', 'jollof-chicken-plantain.jpg', 'Jollof rice with grilled chicken and ripe plantain', 'Nigerian favourites'],
   ['gallery-sharing-jollof', 'jollof-sharing-platter.jpg', 'A platter of jollof rice topped with grilled chicken', 'Made for the whole table'],
   ['gallery-cake', 'celebration-cake.jpg', 'Celebration cake with white flowers and chocolate drips', 'Celebration cakes'],
