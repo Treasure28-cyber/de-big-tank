@@ -24,8 +24,7 @@ After reviewing how the business actually operates, the scope has been deliberat
 This is a much better fit than a full e-commerce build: De Big Tank doesn't need a checkout/payment/fulfillment engine — they need a fast, low-friction way for customers to arrive at a clear WhatsApp message, and a simple way for staff to keep the site's content current.
 
 ### Why this fits
-
-- Staff already handle order confirmation and payment arrangements conversationally — the website's job is to _prepare_ that conversation, not replace it
+- Staff already handle order confirmation and payment arrangements conversationally — the website's job is to *prepare* that conversation, not replace it
 - Removes account creation, login, password reset, and email verification — all friction with no payoff for a business this size
 - Removes the need for a payment gateway integration, PCI concerns, and order-status infrastructure
 - Leaves a clean path to add real online ordering later without a redesign, if the business grows into needing it
@@ -47,7 +46,6 @@ All of the above are viable **v2 candidates** if the business later wants a full
 ## 4. What the Website Actually Does (v1)
 
 **Public site:**
-
 - Shows Restaurant menu, Bakery catalog, Lounge information
 - Lets a customer browse, search/filter, and build a cart
 - At checkout, collects just enough info (name, phone, order type: pickup/delivery, notes) to generate a pre-filled WhatsApp message — no payment, no account
@@ -55,36 +53,35 @@ All of the above are viable **v2 candidates** if the business later wants a full
 - Gallery, About, Promotions/Specials, Contact & location
 
 **Admin/Staff back-office:**
-
 - Secure login (staff only — not customer-facing)
 - Manage menu items & categories (Restaurant, Bakery, Lounge/drinks), including availability toggling
 - Manage gallery images
 - Manage promotions/specials
 - Manage contact info, business hours, WhatsApp number, social links, homepage banners
-- _No_ order or reservation management inside the system — those live entirely in WhatsApp once generated
+- *No* order or reservation management inside the system — those live entirely in WhatsApp once generated
 
 ## 5. Brand Foundation
 
-| Element           | Detail                                                                                                      |
-| ----------------- | ----------------------------------------------------------------------------------------------------------- |
-| Wordmark          | "De Big Tank" — script "De" + bold serif "Big Tank"                                                         |
-| Badge mark        | Circular emblem: chef's hat, fork, spoon, "BT" monogram                                                     |
-| Tagline           | "Restaurant, Bakery & Lounge"                                                                               |
-| Primary           | Deep Burgundy `#7A0D0D`                                                                                     |
-| Secondary         | Bright Red `#B31217`                                                                                        |
-| Background        | White `#FFFFFF`                                                                                             |
-| Surface           | Light Gray `#F5F5F5`                                                                                        |
+| Element | Detail |
+|---|---|
+| Wordmark | "De Big Tank" — script "De" + bold serif "Big Tank" |
+| Badge mark | Circular emblem: chef's hat, fork, spoon, "BT" monogram |
+| Tagline | "Restaurant, Bakery & Lounge" |
+| Primary | Deep Burgundy `#7A0D0D` |
+| Secondary | Bright Red `#B31217` |
+| Background | White `#FFFFFF` |
+| Surface | Light Gray `#F5F5F5` |
 | Accent (optional) | Gold `#C9A227`, for premium highlights on dark sections (consistent with the black/cream dark-variant logo) |
-| Headings font     | Playfair Display (or similar elegant serif)                                                                 |
-| Body font         | Poppins or Inter                                                                                            |
-| Visual style      | Large food photography, rounded cards, soft shadows, clear CTAs for ordering/reserving                      |
+| Headings font | Playfair Display (or similar elegant serif) |
+| Body font | Poppins or Inter |
+| Visual style | Large food photography, rounded cards, soft shadows, clear CTAs for ordering/reserving |
 
 ## 6. User Roles
 
-| Role               | Description                                                |
-| ------------------ | ---------------------------------------------------------- |
-| **Customer/Guest** | Anyone browsing the site — no login required at any point  |
-| **Administrator**  | Staff member managing site content via a secured dashboard |
+| Role | Description |
+|---|---|
+| **Customer/Guest** | Anyone browsing the site — no login required at any point |
+| **Administrator** | Staff member managing site content via a secured dashboard |
 
 No other roles at v1 (no kitchen view, no multi-branch, no owner-vs-staff split) — flagged as a v2 candidate if needed later.
 
@@ -109,13 +106,13 @@ The website's responsibility ends the moment the WhatsApp message is generated a
 
 ## 9. Documentation Set (this deliverable)
 
-| #   | Document                                  | Purpose                                                                      |
-| --- | ----------------------------------------- | ---------------------------------------------------------------------------- |
-| 1   | Project Overview _(this file)_            | Context, revised scope, brand                                                |
-| 2   | Software Requirements Specification (SRS) | Functional & non-functional requirements                                     |
-| 3   | Data Flow Diagrams (DFD)                  | Context diagram, Level 1, Order flow, Reservation flow, Admin flow           |
-| 4   | Software Design Document (SDD)            | Architecture, ERD/data model, tech decisions                                 |
-| 5   | Screen Specifications                     | Page/screen-by-screen UI spec                                                |
-| 6   | DTO / API Specifications                  | Request/response contracts (content management only — no order/payment APIs) |
+| # | Document | Purpose |
+|---|---|---|
+| 1 | Project Overview *(this file)* | Context, revised scope, brand |
+| 2 | Software Requirements Specification (SRS) | Functional & non-functional requirements |
+| 3 | Data Flow Diagrams (DFD) | Context diagram, Level 1, Order flow, Reservation flow, Admin flow |
+| 4 | Software Design Document (SDD) | Architecture, ERD/data model, tech decisions |
+| 5 | Screen Specifications | Page/screen-by-screen UI spec |
+| 6 | DTO / API Specifications | Request/response contracts (content management only — no order/payment APIs) |
 
 Built in phases, as agreed.

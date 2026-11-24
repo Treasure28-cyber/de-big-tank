@@ -5,7 +5,7 @@ import { FormEvent, useCallback, useEffect, useState, useSyncExternalStore } fro
 import { subscribeTheme, getTheme, getServerTheme, toggleTheme } from '../lib/theme';
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
-type Tab = 'overview' | 'categories' | 'products' | 'gallery' | 'settings' | 'subscribers';
+type Tab = 'overview' | 'categories' | 'products' | 'gallery' | 'settings';
 type RecordValue = Record<string, unknown>;
 
 export default function Admin() {
@@ -55,9 +55,6 @@ export default function Admin() {
       if (tab === 'settings') {
         setSettings(await request('/settings'));
         setRecords([]);
-      } else if (tab === 'subscribers') {
-        const data = await request('/admin/subscribers');
-        setRecords(Array.isArray(data?.subscribers) ? data.subscribers as RecordValue[] : []);
       } else {
         const data = await request(`/admin/${tab}`);
         setRecords(Array.isArray(data) ? data : []);
@@ -124,8 +121,8 @@ export default function Admin() {
     <div className="admin-shell">
       <aside className="admin-sidebar">
         <a className="admin-brand" href="/" target="_blank" rel="noreferrer" aria-label="Open the De Big Tank public website">
-          <img className="admin-wordmark" src="/brand-wordmark-source.jpeg" alt="De Big Tank" />
-          <small>Staff workspace</small>
+          <img className="admin-brand-logo brand-logo-light" src="/brand-logo-maroon.webp" alt="" /><img className="admin-brand-logo brand-logo-dark" src="/brand-logo-transparent.webp" alt="" />
+          <div><strong>De Big Tank</strong><small>Staff workspace</small></div>
         </a>
         <nav>
           {([
@@ -133,7 +130,6 @@ export default function Admin() {
             ['categories', 'Categories'],
             ['products', 'Menu items'],
             ['gallery', 'Gallery'],
-            ['subscribers', 'Subscribers'],
             ['settings', 'Site settings'],
           ] as [Tab, string][]).map(([value, label]) => <button key={value} className={tab === value ? 'active' : ''} onClick={() => setTab(value)}>{label}</button>)}
         </nav>
@@ -148,7 +144,6 @@ export default function Admin() {
           tab === 'categories' ? <CategoryManager records={records} editing={editing} setEditing={setEditing} mutate={mutate} /> :
           tab === 'products' ? <ProductManager records={records} categories={categories} editing={editing} setEditing={setEditing} mutate={mutate} /> :
           tab === 'gallery' ? <GalleryManager records={records} editing={editing} setEditing={setEditing} mutate={mutate} /> :
-          tab === 'subscribers' ? <SubscribersManager records={records} mutate={mutate} request={request} /> :
           <SettingsManager settings={settings} mutate={mutate} />}
       </main>
     </div>
@@ -177,28 +172,6 @@ function AdminOverview({ setTab }: { setTab: (tab: Tab) => void }) {
     ['settings', 'Site settings', 'Update contact details, hours and homepage content.'],
   ];
   return <div className="admin-overview"><div className="admin-welcome"><p className="eyebrow">Content control</p><h2>Keep the whole house current.</h2><p>Changes here flow directly to the public website. Orders and reservations remain in WhatsApp and are never stored here.</p></div><div className="admin-action-grid">{items.map(([tab, title, copy]) => <button key={tab} onClick={() => setTab(tab)}><span>Manage</span><strong>{title}</strong><p>{copy}</p><b>Open section →</b></button>)}</div></div>;
-}
-
-function SubscribersManager({ records, mutate, request }: { records: RecordValue[]; mutate: ManagerProps['mutate']; request: (path: string, options?: RequestInit) => Promise<RecordValue | null> }) {
-  const [preview, setPreview] = useState<RecordValue | null>(null);
-  const [announcementMessage, setAnnouncementMessage] = useState('');
-  const [total, setTotal] = useState(0);
-  useEffect(() => { void request('/admin/subscribers').then((data) => setTotal(Number(data?.total ?? 0))).catch(() => undefined); }, [request, records.length]);
-  const exportCsv = () => {
-    const quote = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
-    const rows = [['Name','Email','WhatsApp number','Date joined','Active status'], ...records.map((record) => [record.firstName, record.email, record.whatsappNumber, new Date(String(record.createdAt)).toLocaleDateString('en-NG'), record.isActive ? 'Active' : 'Inactive'])];
-    const blob = new Blob([rows.map((row) => row.map(quote).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = 'de-big-tank-subscribers.csv'; link.click(); URL.revokeObjectURL(url);
-  };
-  const send = async (event: FormEvent<HTMLFormElement>, isPreview: boolean) => {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    try {
-      const result = await request('/admin/announcements', { method: 'POST', body: JSON.stringify({ subject: form.get('subject'), message: form.get('message'), audience: form.get('audience'), preview: isPreview }) });
-      setPreview(isPreview ? result : null); setAnnouncementMessage(isPreview ? 'Preview ready below.' : `Announcement sent to ${String(result?.sent ?? 0)} subscribers.`);
-    } catch (caught) { setAnnouncementMessage(caught instanceof Error ? caught.message : 'Announcement could not be sent.'); }
-  };
-  return <div className="subscriber-admin"><section className="admin-list-panel"><div className="subscriber-heading"><div><p className="eyebrow">Guest community</p><h2>Subscribers</h2></div><button type="button" className="subscriber-export" onClick={exportCsv}>Export to CSV</button></div><p className="subscriber-total">{total} total subscribers</p><AdminTable headers={['Name','Email','WhatsApp number','Date joined','Active status','Action']} rows={records.map((record) => [String(record.firstName), String(record.email), String(record.whatsappNumber ?? '—'), new Date(String(record.createdAt)).toLocaleDateString('en-NG'), Boolean(record.isActive) ? 'Active' : 'Inactive', <button key={String(record.id)} className="subscriber-toggle" type="button" onClick={() => void mutate(`/admin/subscribers/${record.id}`, 'PATCH', { isActive: !record.isActive })}>{record.isActive ? 'Mark inactive' : 'Reactivate'}</button>])} /></section><section className="admin-form-panel"><h2>Send announcement</h2><p>Send an email update to active subscribers, or export WhatsApp contacts for a manual send.</p><form className="admin-form" onSubmit={(event) => void send(event, false)}><AdminField name="subject" label="Subject" required maxLength={180} /><label className="wide"><span>Message body</span><textarea name="message" required maxLength={10000} rows={6} /></label><label><span>Send to</span><select name="audience"><option value="all">All subscribers (email)</option><option value="email">Email only</option><option value="whatsapp">WhatsApp numbers only (manual)</option></select></label><div className="admin-form-actions wide"><button type="button" className="secondary" onClick={(event) => { const form = event.currentTarget.form; if (form) void send({ preventDefault: () => {}, currentTarget: form } as FormEvent<HTMLFormElement>, true); }}>Preview</button><button type="submit">Send announcement</button></div></form>{announcementMessage && <p role="status" className="announcement-feedback">{announcementMessage}</p>}{preview && <article className="announcement-preview"><strong>{String(preview.subject)}</strong><p>{String(preview.message)}</p><small>Recipients: {String(preview.recipients)}</small></article>}</section></div>;
 }
 
 type ManagerProps = {

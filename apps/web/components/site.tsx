@@ -75,7 +75,6 @@ export default function Site({ slug }: { slug?: PublicSlug }) {
   const [cartReady, setCartReady] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
-  const [signupOpen, setSignupOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const theme = useSyncExternalStore(subscribeTheme, getTheme, getServerTheme);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -128,14 +127,7 @@ export default function Site({ slug }: { slug?: PublicSlug }) {
         categories: categories.length ? categories : fallbackCategories,
         gallery: gallery.length ? gallery : fallbackGallery,
         promotions: promotions.length ? promotions : fallbackPromotions,
-        settings: settings ? {
-          ...fallbackSettings,
-          ...settings,
-          whatsappNumber: '2347037236666',
-          phone: '07037236666',
-          email: 'de.bigtankassociate@gmail.com',
-          address: 'Km 1 Ugbomro Road, Warri, Delta State, Nigeria',
-        } : fallbackSettings,
+        settings: settings ?? fallbackSettings,
       });
     }).catch(() => {
       // The polished demo content remains visible when the content API is not configured.
@@ -156,7 +148,7 @@ export default function Site({ slug }: { slug?: PublicSlug }) {
   }, []);
 
   useEffect(() => {
-    const overlayOpen = mobileOpen || cartOpen || checkoutOpen || signupOpen;
+    const overlayOpen = mobileOpen || cartOpen || checkoutOpen;
     const previousOverflow = document.body.style.overflow;
     if (overlayOpen) document.body.style.overflow = 'hidden';
     const onKeyDown = (event: KeyboardEvent) => {
@@ -164,14 +156,13 @@ export default function Site({ slug }: { slug?: PublicSlug }) {
       setMobileOpen(false);
       setCartOpen(false);
       setCheckoutOpen(false);
-      setSignupOpen(false);
     };
     document.addEventListener('keydown', onKeyDown);
     return () => {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener('keydown', onKeyDown);
     };
-  }, [mobileOpen, cartOpen, checkoutOpen, signupOpen]);
+  }, [mobileOpen, cartOpen, checkoutOpen]);
 
   useEffect(() => {
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -193,6 +184,7 @@ export default function Site({ slug }: { slug?: PublicSlug }) {
       '#main-content .values-row > div',
       '#main-content .contact-page > section',
       '#main-content .form-page > *',
+      '.site-footer .footer-main > div',
     ].join(','));
 
     revealTargets.forEach((element) => {
@@ -252,12 +244,13 @@ export default function Site({ slug }: { slug?: PublicSlug }) {
   return (
     <div className="site-shell">
       <a href="#main-content" className="skip-link">Skip to content</a>
-      {!signupOpen && slug === undefined && <a href="#" className="event-updates-fab" onClick={(event) => { event.preventDefault(); setSignupOpen(true); }}>Be first to know</a>}
       <header className="site-header">
         <div className="header-inner">
           <Link href="/" className="brand" aria-label="De Big Tank home">
+            <img className="brand-logo brand-logo-light" src="/brand-logo-maroon.webp" alt="" />
+            <img className="brand-logo brand-logo-dark" src="/brand-logo-transparent.webp" alt="" />
             <span>
-              <img className="brand-wordmark" src="/brand-wordmark-source.jpeg" alt="De Big Tank" />
+              <strong>De Big Tank</strong>
               <small>Restaurant · Bakery · Lounge</small>
             </span>
           </Link>
@@ -324,7 +317,6 @@ export default function Site({ slug }: { slug?: PublicSlug }) {
         />
       )}
       {checkoutOpen && <Checkout items={cart} settings={content.settings} close={() => setCheckoutOpen(false)} />}
-      {signupOpen && slug === undefined && <SignupModal close={() => setSignupOpen(false)} whatsapp={content.settings.whatsappNumber} />}
     </div>
   );
 }
@@ -356,11 +348,11 @@ function Home({ content, add }: { content: Content; add: (product: Product, vari
         <img className="home-hero-image" src="/menu-hero-v1.webp" alt="Jollof rice, grilled suya, fresh pastries and cocktails in a warmly lit lounge" fetchPriority="high" />
         <div className="hero-content">
           <p className="eyebrow"><span className="hero-status-dot" /> Warri, Delta State · Open daily</p>
-          <h1>Eat. Bake. Unwind. One house in Warri.</h1>
-          <p className="hero-copy">Warri's restaurant, bakery and lounge. Under one roof.</p>
+          <h1>{content.settings.heroTitle ?? fallbackSettings.heroTitle}</h1>
+          <p className="hero-copy"><ResponsiveCopy mobile={<>Restaurant. Bakery. Lounge.<br />Whatever mood finds you — this is where it gets good.</>} desktop={content.settings.heroSubtitle ?? fallbackSettings.heroSubtitle} /></p>
           <div className="hero-actions">
-            <Link href="/reserve" className="button primary">Book a table</Link>
-            <Link href="/menu" className="button outline-dark">View menu</Link>
+            <Link href="#three-ways" className="button primary">Find your mood <span aria-hidden="true">↓</span></Link>
+            <Link href="/reserve" className="button outline-dark">Book a table</Link>
           </div>
           <div className="hero-experiences" aria-label="Explore our experiences">
             {serviceNav.map(([label, href], index) => <Link href={href} key={href}><small>0{index + 1}</small><span>{label}</span></Link>)}
@@ -400,14 +392,6 @@ function Home({ content, add }: { content: Content; add: (product: Product, vari
         <div className="product-grid">
           {featuredProducts.map((product) => <ProductTile key={product.id} product={product} add={add} featured />)}
         </div>
-      </section>
-
-      <section className="house-dishes-section">
-        <div className="section-heading-row"><div><p className="eyebrow">Made in our kitchen</p><h2>From our kitchen to your table.</h2><p className="gallery-subline">A taste of the dishes and favourites prepared at De Big Tank.</p></div></div>
-        <div className="house-dishes-grid">{[
-          // TODO: replace these four neutral tiles with clean, unwatermarked client photos.
-          ['Egusi soup', null], ['Ogbono soup', null], ['Vegetable soup', '/vegetable-soup.jpeg'], ['Spaghetti', '/spaghetti.jpeg'], ['Tigernut drink', null], ['Rice and chicken', null], ['Burger', '/burger.jpeg'], ['Rice and roasted chicken', '/rice-and-roasted-chicken.jpeg'], ['Pizza', '/pizza.jpeg'],
-        ].map(([name, src]) => <article className={`house-dish-card${src ? '' : ' house-dish-placeholder'}`} key={String(name)}>{src ? <img src={src as string} alt={String(name)} loading="lazy" /> : <div className="placeholder-tile" aria-label={`${name} photo coming soon`}><span>Photo coming soon</span></div>}<h3>{name}</h3></article>)}</div>
       </section>
 
       <section className="story-section">
@@ -568,8 +552,7 @@ function ProductTile({ product, add, featured = false }: { product: Product; add
   return (
     <article className={`product-card ${!product.isAvailable ? 'sold-out' : ''}`}>
       <div className="product-image-wrap">
-        {/* TODO: use the client's real smoked beef ribs photo when supplied. */}
-        {product.slug === 'beef-suya-platter' ? <div className="rib-photo-placeholder" role="img" aria-label="Smoked beef ribs photo coming soon"><span>Smoked beef ribs</span><small>Photo coming soon</small></div> : imageFailed ? <div className="product-image-error" role="img" aria-label={`Photo unavailable for ${product.name}`}>Photo unavailable</div> : <img src={product.imageUrl ?? fallbackProducts.find((item) => item.slug === product.slug)?.imageUrl ?? undefined} alt={product.altText ?? product.name} ref={(image) => {
+        {imageFailed ? <div className="product-image-error" role="img" aria-label={`Photo unavailable for ${product.name}`}>Photo unavailable</div> : <img src={product.imageUrl ?? fallbackProducts.find((item) => item.slug === product.slug)?.imageUrl ?? undefined} alt={product.altText ?? product.name} ref={(image) => {
           if (image?.complete && image.naturalWidth === 0) useImageFallback(image);
         }} onError={(event) => useImageFallback(event.currentTarget)} />}
         {!product.isAvailable && <span className="sold-out-badge">Sold out</span>}
@@ -647,9 +630,9 @@ function Contact({ settings }: { settings: SiteSettings }) {
         <h1>We are expecting you.</h1>
         <p className="lead">Questions, reservations and cake orders are easiest on WhatsApp. Our team responds fast and handles the details so you can focus on looking forward to coming in.</p>
         <div className="contact-lines">
-          <div><span>Call or WhatsApp</span><a href="tel:+2347037236666">07037236666</a></div>
-          <div><span>Email</span><a href="mailto:de.bigtankassociate@gmail.com">de.bigtankassociate@gmail.com</a></div>
-          <div><span>Find us</span><p>Km 1 Ugbomro Road, Warri, Delta State, Nigeria</p></div>
+          <div><span>Call or WhatsApp</span><a href={`tel:${settings.phone ?? ''}`}>{settings.phone ?? 'To be confirmed'}</a></div>
+          <div><span>Email</span><a href={`mailto:${settings.email ?? ''}`}>{settings.email ?? 'To be confirmed'}</a></div>
+          <div><span>Find us</span><p>{settings.address ?? 'Address to be confirmed'}</p></div>
         </div>
         <a className="button primary" href={`https://wa.me/${settings.whatsappNumber}`} target="_blank" rel="noreferrer">Chat on WhatsApp</a>
       </section>
@@ -659,7 +642,7 @@ function Contact({ settings }: { settings: SiteSettings }) {
         <dl>{hours.map(([day, time]) => <div key={day}><dt>{day}</dt><dd>{time}</dd></div>)}</dl>
       </section>
       <section className="map-panel">
-        {settings.mapEmbedUrl ? <iframe src={settings.mapEmbedUrl} title="De Big Tank location" loading="lazy" /> : <div><p className="eyebrow">Location</p><h2>Map coming soon</h2><p>Find us at Km 1 Ugbomro Road, Warri. Call or WhatsApp us for directions.</p></div>}
+        {settings.mapEmbedUrl ? <iframe src={settings.mapEmbedUrl} title="De Big Tank location" loading="lazy" /> : <div><p className="eyebrow">Location</p><h2>Map coming soon</h2><p>The exact address and map provider are awaiting final business confirmation.</p></div>}
       </section>
     </div>
   );
@@ -773,41 +756,10 @@ function Checkout({ items, settings, close }: { items: CartItem[]; settings: Sit
             <button className="button primary" type="submit">Open order in WhatsApp</button>
             <p className="form-note">You’ll review and send the message yourself. No order data is stored by this website.</p>
           </form>
-      )}
-    </div>
+        )}
+      </div>
     </div>
   );
-}
-
-function SignupModal({ close, whatsapp }: { close: () => void; whatsapp: string }) {
-  const [complete, setComplete] = useState(false);
-  const [hasWhatsApp, setHasWhatsApp] = useState(false);
-  const [subscribed, setSubscribed] = useState(false);
-  const [firstName, setFirstName] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  useEffect(() => { setSubscribed(window.localStorage.getItem('dbt-subscribed-v1') === 'true'); }, []);
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError('');
-    const form = new FormData(event.currentTarget);
-    const name = String(form.get('firstName') ?? '').trim();
-    const email = String(form.get('email') ?? '').trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError('Enter a valid email address.'); return; }
-    setFirstName(name);
-    setHasWhatsApp(Boolean(String(form.get('whatsappNumber') ?? '').trim()));
-    setLoading(true);
-    try {
-      const response = await fetch(`${apiUrl}/subscribers`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ firstName: name, email, whatsappNumber: String(form.get('whatsappNumber') ?? '').trim() || undefined, consent: form.get('consent') === 'on' }) });
-      const body = await response.json() as { message?: string };
-      if (!response.ok) throw new Error(body.message ?? 'We could not add you right now. Please try again.');
-      window.localStorage.setItem('dbt-subscribed-v1', 'true');
-      setComplete(true);
-    } catch (caught) { setError(caught instanceof Error ? caught.message : 'We could not add you right now. Please try again.'); }
-    finally { setLoading(false); }
-  };
-  const whatsAppLink = `https://wa.me/${whatsapp.replace(/\D/g, '')}?text=Hi%2C+please+add+me+to+De+Big+Tank+event+updates`;
-  return subscribed && !complete ? null : <div className="signup-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) close(); }}><section className="signup-modal" role="dialog" aria-modal="true" aria-labelledby="signup-title"><button className="signup-close" type="button" onClick={close} aria-label="Close signup">×</button>{complete ? <div className="signup-success"><p className="eyebrow gold">You're on the list</p><h2 id="signup-title">You are in.</h2><p>You are in. Watch your inbox for what is coming next.</p>{hasWhatsApp && <><p>One more step — tap below to activate your WhatsApp updates.</p><a className="button signup-submit" href={whatsAppLink} target="_blank" rel="noreferrer">Activate WhatsApp alerts</a></>}</div> : <><p className="eyebrow gold">The inside word</p><h2 id="signup-title">Be the first to know.</h2><p>Game nights, karaoke, special events — straight to you before anyone else.</p><form onSubmit={(event) => void submit(event)}><label><span>First name</span><input name="firstName" autoComplete="given-name" required maxLength={80} /></label><label><span>Email address</span><input name="email" type="email" autoComplete="email" required maxLength={254} /></label><label><span>For WhatsApp event alerts <small>(optional)</small></span><input name="whatsappNumber" type="tel" autoComplete="tel" placeholder="080… or +234…" pattern="(?:\+?234|0)?[789][01]\d{8}" /></label><label className="signup-consent"><input name="consent" type="checkbox" required /><span>I agree to receive event updates from De Big Tank</span></label>{error && <p className="signup-error" role="alert">{error}</p>}<button className="button signup-submit" disabled={loading}>{loading ? 'Joining…' : 'Join the list'}</button></form></>}</section></div>;
 }
 
 function Field({ label, ...props }: { label: string } & React.InputHTMLAttributes<HTMLInputElement>) {
@@ -831,8 +783,8 @@ function Footer({ settings }: { settings: SiteSettings }) {
           <p>{settings.tagline}</p>
         </div>
         <div><h3>Explore</h3>{nav.slice(1, 5).map(([label, href]) => <Link key={href} href={href}>{label}</Link>)}</div>
-        <div><h3>Visit</h3><p>Km 1 Ugbomro Road, Warri, Delta State, Nigeria</p></div>
-        <div><h3>Talk to us</h3><a href="https://wa.me/2347037236666" target="_blank" rel="noreferrer">WhatsApp: 07037236666</a><a href="tel:+2347037236666">Call: 07037236666</a><a href="mailto:de.bigtankassociate@gmail.com">Email: de.bigtankassociate@gmail.com</a>{socialLinks.map(([name, href]) => <a key={name} href={href} target="_blank" rel="noreferrer">{name}</a>)}</div>
+        <div><h3>Visit</h3><p>{settings.address}</p></div>
+        <div><h3>Talk to us</h3><a href={`https://wa.me/${settings.whatsappNumber}`} target="_blank" rel="noreferrer">WhatsApp: {settings.phone ?? settings.whatsappNumber}</a>{settings.email && <a href={`mailto:${settings.email}`}>Email: {settings.email}</a>}{socialLinks.map(([name, href]) => <a key={name} href={href} target="_blank" rel="noreferrer">{name}</a>)}</div>
         <div><h3>Open daily</h3>{Object.entries(settings.businessHours ?? {}).map(([service, hours]) => <p key={service}>{service}: {hours}</p>)}</div>
       </div>
       <div className="footer-bottom"><span>© {new Date().getFullYear()} De Big Tank</span><span>Restaurant · Bakery · Lounge</span></div>

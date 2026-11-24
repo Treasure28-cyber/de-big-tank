@@ -9,8 +9,6 @@ import { ContentController } from './content.controller';
 import { AppController } from './app.controller';
 import { PrismaService } from './prisma.service';
 import { MediaController } from './media.controller';
-import { SubscribersController } from './subscribers.controller';
-import { EmailService } from './email.service';
 
 @Module({
   imports: [
@@ -28,12 +26,11 @@ import { EmailService } from './email.service';
     }),
     ThrottlerModule.forRoot([{ ttl: 60_000, limit: 100 }]),
   ],
-  controllers: [AppController, AuthController, ContentController, MediaController, SubscribersController],
+  controllers: [AppController, AuthController, ContentController, MediaController],
   providers: [
     PrismaService,
     AuthService,
     AdminGuard,
-    EmailService,
     { provide: APP_GUARD, useClass: ThrottlerGuard },
   ],
 })
